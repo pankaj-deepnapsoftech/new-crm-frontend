@@ -152,6 +152,24 @@ const columns = [
     Header: "Lead Category",
     accessor: "leadCategory",
   },
+    {
+      Header: "Demo File",
+      accessor: "demoPdf",
+      Cell: ({ row }) => (
+        row.original.demoPdf ? (
+          <a
+            href={row.original.demoPdf}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            View File
+          </a>
+        ) : (
+          <span>No File</span>
+        )
+      ),
+    },
 ];
 
 const Leads = () => {
@@ -1758,11 +1776,11 @@ const Leads = () => {
                                           backgroundColor:
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].bg,
+                                            ]?.bg,
                                           color:
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].text,
+                                            ]?.text,
                                         }}
                                       >
                                         {row.original.status}
