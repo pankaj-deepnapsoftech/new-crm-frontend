@@ -26,7 +26,6 @@ const LeadsDetailsDrawer = ({ dataId: id, closeDrawerHandler }) => {
       });
       const data = await response.json();
 
-
       if (!data.success) {
         throw new Error(data.message);
       }
@@ -57,6 +56,7 @@ const LeadsDetailsDrawer = ({ dataId: id, closeDrawerHandler }) => {
         prcQt: data.lead?.prc_qt || "N/A",
         location: data.lead?.location || "N/A",
         leadCategory: data.lead?.leadCategory,
+        demo: data.lead?.demo,
       });
 
       setIsLoading(false);
@@ -263,12 +263,54 @@ const LeadsDetailsDrawer = ({ dataId: id, closeDrawerHandler }) => {
                 </p>
               </div>
             )}
+
+            {details?.demo && (
+              <div className="border rounded-lg p-4 mt-6">
+                <h3 className="font-bold text-lg mb-3">
+                  Demo Scheduled
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="font-bold text-gray-700">
+                    <p>Demo Date & Time</p>
+                    <p className="font-normal">
+                      {details?.demo?.demoDateTime
+                        ? moment(details.demo.demoDateTime).format(
+                            "DD-MM-YYYY HH:mm"
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+
+                  <div className="font-bold text-gray-700">
+                    <p>Demo Type</p>
+                    <Badge
+                      colorScheme={
+                        details?.demo?.demoType === "Physical"
+                          ? "blue"
+                          : "purple"
+                      }
+                    >
+                      {details?.demo?.demoType || "N/A"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {details?.demo?.notes && (
+                  <div className="font-bold text-gray-700 mt-3">
+                    <p>Demo Notes</p>
+                    <p className="font-normal text-green-700">
+                      {details.demo.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
-  
 };
 
 export default LeadsDetailsDrawer;

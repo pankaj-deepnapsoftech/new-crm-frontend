@@ -84,7 +84,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlineSpeed />
             </span>
@@ -106,7 +109,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <FaPeopleGroup />
             </span>
@@ -119,22 +125,23 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
           </li>
         </NavLink>
 
-
         <NavLink
           to="chats"
           className={({ isActive }) =>
             isActive ? "text-[#1640d6]" : "text-black"
           }
-          
           onClick={() => {
             if (isMenuOpen) {
               setIsMenuOpen(false);
             }
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(true)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(true)}
+          >
             <span>
-              <FaMessage  />
+              <FaMessage />
             </span>
             <span>Chat</span>
             {!checkAccess(auth, "admin")?.isAllowed && (
@@ -154,7 +161,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlinePeople />
             </span>
@@ -176,7 +186,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdHomeWork />
             </span>
@@ -198,11 +211,39 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdLeaderboard />
             </span>
             <span>Leads</span>
+            {!checkAccess(auth, "lead")?.isAllowed && (
+              <span className="mt-1">
+                <FaLock size="12" color="#b1b1b1" />
+              </span>
+            )}
+          </li>
+        </NavLink>
+
+        <NavLink
+          to="demo"
+          className={({ isActive }) =>
+            isActive ? "text-[#1640d6]" : "text-black"
+          }
+          onClick={() => {
+            isMenuOpen && setIsMenuOpen(false);
+          }}
+        >
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
+            <span>
+              <MdLeaderboard />
+            </span>
+            <span>Demo</span>
             {!checkAccess(auth, "lead")?.isAllowed && (
               <span className="mt-1">
                 <FaLock size="12" color="#b1b1b1" />
@@ -220,7 +261,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdLeaderboard />
             </span>
@@ -261,7 +305,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
                 isMenuOpen && setIsMenuOpen(false);
               }}
             >
-              <li className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+              <li
+                className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+                onClick={() => changeOnlineStatus(false)}
+              >
                 <span>Indiamart Leads</span>
                 {!checkAccess(auth, "lead")?.isAllowed && (
                   <span className="mt-1">
@@ -279,7 +326,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
                 isMenuOpen && setIsMenuOpen(false);
               }}
             >
-              <li className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+              <li
+                className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+                onClick={() => changeOnlineStatus(false)}
+              >
                 <span>JustDial Leads</span>
                 {!checkAccess(auth, "lead")?.isAllowed && (
                   <span className="mt-1">
@@ -297,7 +347,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
                 isMenuOpen && setIsMenuOpen(false);
               }}
             >
-              <li className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+              <li
+                className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+                onClick={() => changeOnlineStatus(false)}
+              >
                 <span>Facebook Leads</span>
                 {!checkAccess(auth, "lead")?.isAllowed && (
                   <span className="mt-1">
@@ -315,7 +368,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
                 isMenuOpen && setIsMenuOpen(false);
               }}
             >
-              <li className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+              <li
+                className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+                onClick={() => changeOnlineStatus(false)}
+              >
                 <span>Instagram Leads</span>
                 {!checkAccess(auth, "lead")?.isAllowed && (
                   <span className="mt-1">
@@ -333,7 +389,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
                 isMenuOpen && setIsMenuOpen(false);
               }}
             >
-              <li className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+              <li
+                className="flex gap-x-2 pl-6 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+                onClick={() => changeOnlineStatus(false)}
+              >
                 <span>Google Leads</span>
                 {!checkAccess(auth, "lead")?.isAllowed && (
                   <span className="mt-1">
@@ -354,7 +413,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdHeadphones />
             </span>
@@ -376,7 +438,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdLocalOffer />
             </span>
@@ -398,7 +463,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <FaFileInvoice />
             </span>
@@ -420,7 +488,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <FaFileLines />
             </span>
@@ -442,7 +513,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlinePayment />
             </span>
@@ -464,7 +538,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlineProductionQuantityLimits />
             </span>
@@ -486,7 +563,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlineCategory />
             </span>
@@ -508,7 +588,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdAttachMoney />
             </span>
@@ -530,7 +613,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlineCategory />
             </span>
@@ -552,7 +638,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <TbReport />
             </span>
@@ -610,12 +699,15 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdOutlineMarkEmailRead />
             </span>
             <span>Email Database</span>
-                        
+
             {!checkAccess(auth, "emails")?.isAllowed && (
               <span className="mt-1">
                 <FaLock size="12" color="#b1b1b1" />
@@ -632,7 +724,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <MdAutorenew />
             </span>
@@ -654,7 +749,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <FaDatabase />
             </span>
@@ -677,7 +775,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <IoSettingsSharp />
             </span>
@@ -699,7 +800,10 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             isMenuOpen && setIsMenuOpen(false);
           }}
         >
-          <li className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]" onClick={() => changeOnlineStatus(false)}>
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
             <span>
               <GrConfigure />
             </span>

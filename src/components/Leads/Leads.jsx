@@ -40,7 +40,9 @@ import {
   openShowDetailsLeadsDrawer,
   openShowChatDrawer,
   openKYCDrawer,
-  closeKYCDrawer
+  closeKYCDrawer,
+  openMoveToDemoDrawer,
+  closeMoveToDemoDrawer,
 } from "../../redux/reducers/misc";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -48,6 +50,7 @@ import { useCookies } from "react-cookie";
 import Loading from "../ui/Loading";
 import { FcDatabase } from "react-icons/fc";
 import {
+  FaArrowsAlt,
   FaCaretDown,
   FaCaretUp,
   FaFileCsv,
@@ -72,6 +75,7 @@ import LeadsDetailsDrawer from "../ui/Drawers/Details Drawers/LeadsDetailsDrawer
 import Chatdrawer from "../ui/Drawers/Chat/Chatdrawer";
 import LeadsDrawer from "../ui/Drawers/Add Drawers/LeadsDrawer";
 import KYCDrawer from "../ui/Drawers/KYC/KYCDrawer";
+import MoveToDemo from "../ui/Drawers/Edit Drawers/MoveToDemo";
 import moment from "moment";
 
 import {
@@ -222,6 +226,7 @@ const Leads = () => {
     sendSMSDrawerIsOpened,
     showBulkAssignDrawerIsOpened,
     kycDrawerIsOpened,
+    moveToDemoDrawerIsOpened,
   } = useSelector((state) => state.misc);
 
   const { role, ...auth } = useSelector((state) => state.auth);
@@ -461,17 +466,21 @@ const Leads = () => {
         pageIndex * pageSize + pageSize
       );
       const bulkSMSMobilesArr = reqData.map((data) => data.phone);
-    setBulkSMSMobiles((prev) => [...prev, ...bulkSMSMobilesArr]);
+      setBulkSMSMobiles((prev) => [...prev, ...bulkSMSMobilesArr]);
 
-    const bulkSMSNameArr = reqData.map((data) => data.name);
-    setBulkName((prev) => [...prev, ...bulkSMSNameArr]);
+      const bulkSMSNameArr = reqData.map((data) => data.name);
+      setBulkName((prev) => [...prev, ...bulkSMSNameArr]);
 
-      const selectedUsersArr = reqData.map(({ phone, name }) => ({ phone, name }));
+      const selectedUsersArr = reqData.map(({ phone, name }) => ({
+        phone,
+        name,
+      }));
 
-      setSelectedUsers((prevSelected) => [...prevSelected, ...selectedUsersArr]);
+      setSelectedUsers((prevSelected) => [
+        ...prevSelected,
+        ...selectedUsersArr,
+      ]);
     } else {
-
-
       const reqData = filteredData.slice(
         pageIndex * pageSize,
         pageIndex * pageSize + pageSize
@@ -481,15 +490,14 @@ const Leads = () => {
         prev.filter((mobile) => !deselectedPhones.includes(mobile))
       );
       setBulkName((prev) =>
-        prev.filter((userName) =>
-          !reqData.some((data) => data.name === userName)
+        prev.filter(
+          (userName) => !reqData.some((data) => data.name === userName)
         )
       );
-     
+
       setSelectedUsers((prevSelected) =>
         prevSelected.filter((user) => !deselectedPhones.includes(user.phone))
       );
-      
     }
   };
 
@@ -498,7 +506,7 @@ const Leads = () => {
       setBulkSMSMobiles((prev) => [...prev, phone]);
       setSelectedUsers((prevSelected) => [...prevSelected, { phone, name }]);
       setBulkName((prev) => [...prev, name]);
-    }else{
+    } else {
       setBulkSMSMobiles((prev) => prev.filter((mobile) => mobile !== phone));
       setBulkName((prev) => prev.filter((userName) => userName !== name));
       setSelectedUsers((prevSelected) =>
@@ -506,7 +514,6 @@ const Leads = () => {
       );
     }
   };
-
 
   const bulkAssignHandler = async (e) => {
     const rows = document.getElementsByName("select");
@@ -1001,52 +1008,52 @@ const Leads = () => {
       let filledFields = 0;
 
       // Check if name exists (from people or company)
-      if (lead.name && lead.name.trim() !== '') {
+      if (lead.name && lead.name.trim() !== "") {
         filledFields++;
       }
 
       // Check if phone exists
-      if (lead.phone && lead.phone.trim() !== '') {
+      if (lead.phone && lead.phone.trim() !== "") {
         filledFields++;
       }
 
       // Check if email exists
-      if (lead.email && lead.email.trim() !== '') {
+      if (lead.email && lead.email.trim() !== "") {
         filledFields++;
       }
 
       // Check if status exists
-      if (lead.status && lead.status.trim() !== '') {
+      if (lead.status && lead.status.trim() !== "") {
         filledFields++;
       }
 
       // Check if source exists
-      if (lead.source && lead.source.trim() !== '') {
+      if (lead.source && lead.source.trim() !== "") {
         filledFields++;
       }
 
       // Check if assigned exists
-      if (lead.assigned && lead.assigned.trim() !== '') {
+      if (lead.assigned && lead.assigned.trim() !== "") {
         filledFields++;
       }
 
       // Check if notes exists
-      if (lead.notes && lead.notes.trim() !== '') {
+      if (lead.notes && lead.notes.trim() !== "") {
         filledFields++;
       }
 
       // Check if PRC QT exists
-      if (lead.prc_qt && lead.prc_qt.trim() !== '') {
+      if (lead.prc_qt && lead.prc_qt.trim() !== "") {
         filledFields++;
       }
 
       // Check if location exists
-      if (lead.location && lead.location.trim() !== '') {
+      if (lead.location && lead.location.trim() !== "") {
         filledFields++;
       }
 
       // Check if lead category exists
-      if (lead.leadCategory && lead.leadCategory.trim() !== '') {
+      if (lead.leadCategory && lead.leadCategory.trim() !== "") {
         filledFields++;
       }
 
@@ -1054,7 +1061,9 @@ const Leads = () => {
     });
 
     // Calculate average percentage across all leads
-    const averagePercentage = Math.round((totalFilledFields / (filteredData.length * totalFields)) * 100);
+    const averagePercentage = Math.round(
+      (totalFilledFields / (filteredData.length * totalFields)) * 100
+    );
     return averagePercentage;
   };
 
@@ -1088,7 +1097,7 @@ const Leads = () => {
   const sendMessages = async (e) => {
     e.preventDefault();
     setLoading(true);
-  
+
     try {
       for (const data of selectedUsers) {
         const finalComponents = components.map((comp, index) =>
@@ -1101,7 +1110,6 @@ const Leads = () => {
           components: finalComponents,
         };
 
-       
         const res = await axios.post(
           `${process.env.REACT_APP_BACKEND_URL}send-builk-Whatsapp/`,
           payload,
@@ -1112,7 +1120,7 @@ const Leads = () => {
           }
         );
       }
-  
+
       toast.success("Messages sent successfully!");
     } catch (error) {
       console.log(error);
@@ -1123,7 +1131,7 @@ const Leads = () => {
       checkboxes.forEach((checkbox) => {
         checkbox.checked = false;
       });
-  
+
       // Reset states
       setSelectedUsers([]);
       setIsAllSelected(false);
@@ -1454,9 +1462,7 @@ const Leads = () => {
                 >
                   <Chatdrawer
                     dataId={dataId}
-                    closeDrawerHandler={() =>
-                      dispatch(closeShowChatDrawer())
-                    }
+                    closeDrawerHandler={() => dispatch(closeShowChatDrawer())}
                   />
                 </ClickMenu>
               )}
@@ -1466,14 +1472,31 @@ const Leads = () => {
                   <ClickMenu
                     top={0}
                     right={0}
-                    closeContextMenuHandler={() =>
-                      dispatch(closeKYCDrawer())
-                    }
+                    closeContextMenuHandler={() => dispatch(closeKYCDrawer())}
                   >
                     <KYCDrawer
                       closeDrawerHandler={() => dispatch(closeKYCDrawer())}
                       kycProgress={calculateKYCProgress()}
                       totalLeads={filteredData.length}
+                    />
+                  </ClickMenu>
+                )}
+
+                {moveToDemoDrawerIsOpened && (
+                  <ClickMenu
+                    top={0}
+                    right={0}
+                    closeContextMenuHandler={() =>
+                      dispatch(closeMoveToDemoDrawer())
+                    }
+                  >
+                    <MoveToDemo
+                      dataId={dataId}
+                      fetchAllLeads={fetchAllLeads}
+                      closeDrawerHandler={() =>
+                        dispatch(closeMoveToDemoDrawer())
+                      }
+                      leadData={data.find((lead) => lead._id === dataId)}
                     />
                   </ClickMenu>
                 )}
@@ -1516,7 +1539,7 @@ const Leads = () => {
                         setBulkName([]);
                       }}
                       mobiles={bulkSMSMobiles}
-                      names = {bulkName}
+                      names={bulkName}
                     />
                   </ClickMenu>
                 )}
@@ -1758,11 +1781,11 @@ const Leads = () => {
                                           backgroundColor:
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].bg,
+                                            ]?.bg,
                                           color:
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].text,
+                                            ]?.text,
                                         }}
                                       >
                                         {row.original.status}
@@ -1812,11 +1835,23 @@ const Leads = () => {
 
                               {/* Actions */}
                               <Td className="flex gap-x-2">
+                                <FaArrowsAlt
+                                  className="text-black hover:scale-110 transition-transform cursor-pointer"
+                                  size={20}
+                                  title="Schedule Demo"
+                                  onClick={() => {
+                                    setDataId(row.original?._id);
+                                    dispatch(openMoveToDemoDrawer());
+                                  }}
+                                />
                                 <MdContactPhone
                                   className=" text-blue-500 hover:scale-110 transition-transform"
                                   size={20}
                                   onClick={() =>
-                                    showChatsHandler({id: row.original?._id, customer_name: row.original?.name})
+                                    showChatsHandler({
+                                      id: row.original?._id,
+                                      customer_name: row.original?.name,
+                                    })
                                   }
                                 ></MdContactPhone>
 
@@ -1889,7 +1924,7 @@ const Leads = () => {
             </div>
 
             {!loading && statusChartData && (
-             <div className="mx-auto mt-2  w-full p-10">
+              <div className="mx-auto mt-2  w-full p-10">
                 {selectedGraph === "PieChart" && (
                   <PieChart
                     labels={statusChartData.labels}
@@ -1949,7 +1984,12 @@ const Leads = () => {
               />
             ))}
             <Box className="flex items-center justify-center gap-2">
-              <Button onClick={(e)=> {e.preventDefault() , addComponent}} colorScheme="orange">
+              <Button
+                onClick={(e) => {
+                  e.preventDefault(), addComponent;
+                }}
+                colorScheme="orange"
+              >
                 Add Component
               </Button>
               <Button
