@@ -16,6 +16,7 @@ import { useContext, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const LeadsDrawer = ({
   fetchAllLeads,
@@ -44,7 +45,8 @@ const LeadsDrawer = ({
 
   const [companyOptionsList, setCompanyOptionsList] = useState();
   const [selectedCompanyOption, setSelectedCompanyOption] = useState();
-
+  const [showPreviewImage, SetImagePreview] = useState(null)
+  const [file, setFile] = useState(null)
   const typeOptionsList = [
     { value: "Company", label: "Corporate" },
     { value: "People", label: "Individual" },
@@ -53,6 +55,7 @@ const LeadsDrawer = ({
   const statusOptionsList = [
     // { value: "Draft", label: "Draft" },
     { value: "New", label: "New" },
+    { value: "Demo", label: "Demo" },
     { value: "In Negotiation", label: "In Negotiation" },
     { value: "Completed", label: "Completed" },
     { value: "Loose", label: "Loose" },
@@ -70,12 +73,12 @@ const LeadsDrawer = ({
     { value: "Professionals Network", label: "Professionals Network" },
     { value: "Customer Referral", label: "Customer Referral" },
     { value: "Sales", label: "Sales" },
-    { value: "Digital Marketing", label: "Digital Marketing"},
+    { value: "Digital Marketing", label: "Digital Marketing" },
     { value: "Upwork", label: "Upwork" },
     { value: "Gem", label: "Gem" },
-    { value: "Freelancer", label: "Freelancer"},
-    { value: "IndiaMart", label: "IndiaMart"},
-    { value: "Fiverr", label: "Fiverr"},
+    { value: "Freelancer", label: "Freelancer" },
+    { value: "IndiaMart", label: "IndiaMart" },
+    { value: "Fiverr", label: "Fiverr" },
   ];
 
   const [typeId, setTypeId] = useState();
@@ -189,6 +192,18 @@ const LeadsDrawer = ({
     }
   };
 
+   const ImageUploader = async (formData) => {
+
+    try {
+      const res = await axios.post("https://images.deepmart.shop/upload", formData);
+      // console.log(res.data?.[0])
+      return res.data?.[0];
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      return null;
+    }
+  };
+
   const addLeadHandler = async (e) => {
     e.preventDefault();
 
@@ -214,6 +229,7 @@ const LeadsDrawer = ({
 
     const productsId = selectedProducts.map((p) => p?.value);
     let body = {};
+    let DemoImage = null
     if (
       statusId?.value === "Assigned" &&
       assigned?.value &&
@@ -267,6 +283,15 @@ const LeadsDrawer = ({
       });
     }
 
+    const formData = new FormData()
+    formData.append("file", file)
+    DemoImage = await ImageUploader(formData)
+    
+    const payload = {
+      ...JSON.parse(body),
+      demoPdf: DemoImage, 
+    };
+
     try {
       const baseURL = process.env.REACT_APP_BACKEND_URL;
 
@@ -276,7 +301,7 @@ const LeadsDrawer = ({
           "Content-Type": "application/json",
           authorization: `Bearer ${cookies?.access_token}`,
         },
-        body: body,
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -528,6 +553,50 @@ const LeadsDrawer = ({
             </>
           )}
 
+          <div className="mt-2 mb-5">
+            <label htmlFor="demoPdf" className="block mb-2 text-sm font-semibold text-gray-700">
+              Attach Demo File
+            </label>
+
+            <div className="relative">
+              <input
+                id="demoPdf"
+                type="file"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  const file = e.target.files[0]
+                  setFile(file)
+                  
+                  const ImageUrl = URL.createObjectURL(file)
+                  SetImagePreview(ImageUrl)
+                }}
+              />
+
+              <div className="flex items-center justify-between px-4 py-2 bg-white border-2 border-dashed border-gray-300 rounded-md shadow-sm hover:border-blue-500 transition-all duration-200">
+                <span className="text-sm text-gray-500">{file?.name || "No file chosen"}</span>
+                <button
+                  type="button"
+                  disabled={!!file}
+                  className="text-white bg-blue-600 hover:bg-blue-700 font-medium text-xs px-4 py-1 rounded shadow"
+                >
+                  Upload File
+                </button>
+              </div>
+            </div>
+          </div>
+          {
+            showPreviewImage && (
+              <div>
+                <img
+                  className="w-32 h-32 object-cover rounded-md "
+                  src={showPreviewImage}
+                  alt="Preview"
+                />
+              </div>
+            )
+          }
+
+
           {/* Lead Remarks */}
           <FormControl className="mt-2 mb-5">
             <FormLabel fontWeight="bold" className="text-[#4B5563]">
@@ -570,7 +639,7 @@ const LeadsDrawer = ({
           {/* condition */}
           <FormControl className="mt-2 mb-5">
             <FormLabel fontWeight="bold" className="text-[#4B5563]">
-              Lead Category
+              Lead Category 
             </FormLabel>
             <Select
               value={category}

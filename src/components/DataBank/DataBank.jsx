@@ -133,6 +133,8 @@ const columns = [
     Header: "Lead Category",
     accessor: "leadCategory",
   },
+
+
 ];
 
 const DataBank = () => {
