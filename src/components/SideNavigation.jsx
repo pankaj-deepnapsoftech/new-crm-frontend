@@ -21,7 +21,12 @@ import {
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { GrConfigure } from "react-icons/gr";
-import { FaFileInvoice, FaFileLines, FaPeopleGroup, FaMessage  } from "react-icons/fa6";
+import {
+  FaFileInvoice,
+  FaFileLines,
+  FaPeopleGroup,
+  FaMessage,
+} from "react-icons/fa6";
 import { useContext } from "react";
 import { TbReport } from "react-icons/tb";
 import { useSelector } from "react-redux";
@@ -38,28 +43,27 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
   const { role, ...auth } = useSelector((state) => state.auth);
   const [showDMLeadsSubmenu, setShowDMLeadsSubmenu] = useState(false);
   const user = useSelector((state) => state.auth);
-  const navigate = useNavigate();  
-  
+  const navigate = useNavigate();
+
   const baseURL = process.env.REACT_APP_BACKEND_URL;
   const changeOnlineStatus = async (status) => {
-    socket.emit('register', user.id);
+    socket.emit("register", user.id);
     try {
       const response = await fetch(`${baseURL}chat/changestatus`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ status, userId: user.id }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update status');
+        throw new Error("Failed to update status");
       }
       const data = await response.json();
-      console.log('Status updated successfully:', data);
-     
+      console.log("Status updated successfully:", data);
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error("Error updating status:", error);
     }
   };
 
