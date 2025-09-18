@@ -1157,7 +1157,7 @@ const Leads = () => {
       setLoading(false);
     }
   };
-
+  console.log(page)
   return (
     <>
       {!isAllowed && (
@@ -1697,8 +1697,9 @@ const Leads = () => {
                         })}
                       </Thead>
                       <Tbody {...getTableBodyProps()}>
-                        {page.map((row) => {
-                          prepareRow(row);
+                        {page.filter((leads) => leads?.original?.status !== "Scheduled Demo" && leads?.original?.status !== "Completed")
+                          .map((row) => {
+                            prepareRow(row);
                           return (
                             <Tr
                               className="relative hover:bg-gray-100 cursor-pointer text-base lg:text-base"
