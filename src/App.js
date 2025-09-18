@@ -45,6 +45,7 @@ import EmailData from "./components/Emails/EmailData";
 import Renewal from "./components/Renewal/Renewal";
 import DataBank from "./components/DataBank/DataBank";
 import ChatIndex from "./components/Chats/ChatIndex";
+import Demo from "./components/Demo/Demo";
 
 function App() {
   const [showAuthenticationMenu, setShowAuthenticationMenu] = useState(false);
@@ -100,6 +101,7 @@ function App() {
             {/* <Route path="customers" element={<Companies />} /> */}
             <Route path="corporates" element={<Companies />} />
             <Route path="leads" element={<Leads />} />
+            <Route path="demo" element={<Demo />} />
             <Route path="indiamart-leads" element={<IndiamartLeads />} />
             <Route path="justdial-leads" element={<IndiamartLeads />} />
             <Route path="facebook-leads" element={<IndiamartLeads />} />
