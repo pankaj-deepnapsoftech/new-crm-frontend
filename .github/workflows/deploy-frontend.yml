@@ -1,0 +1,52 @@
+name: Deploy Frontend to VPS (Apache)
+
+on:
+  push:
+    branches:
+      - main    # change to your deploy branch if different
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install & Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync frontend build to VPS (rsync)
+        uses: burnett01/rsync-deploy@v4
+        with:
+          switches: -avzr --delete --chown=www-data:www-data
+          path: frontend/build/
+          remote_host: ${{ secrets.VPS_IP }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_path: /var/www/subscription.deepnapsoftech.com
+          ssh_private_key: ${{ secrets.SSH_KEY }}
+
+      - name: Fix permissions & reload Apache (SSH)
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            # Ensure ownership is correct (www-data is Apache user)
+            sudo chown -R www-data:www-data /var/www/subscription.deepnapsoftech.com || true
+            sudo find /var/www/subscription.deepnapsoftech.com -type d -exec chmod 755 {} \; || true
+            sudo find /var/www/subscription.deepnapsoftech.com -type f -exec chmod 644 {} \; || true
+
+            # test Apache config and reload
+            sudo apache2ctl configtest || true
+            sudo systemctl reload apache2 || sudo service apache2 reload || true
