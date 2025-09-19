@@ -20,7 +20,7 @@ jobs:
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install & Build frontend
         working-directory: frontend
@@ -32,11 +32,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          # write the private key from the secret into id_rsa
           printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # add VPS host to known_hosts to avoid interactive prompt
+          # Add VPS host to known_hosts to avoid interactive prompt
           if ! ssh-keygen -F "${{ secrets.VPS_IP }}" >/dev/null 2>&1; then
             ssh-keyscan -H "${{ secrets.VPS_IP }}" >> ~/.ssh/known_hosts || true
           fi
@@ -76,16 +75,13 @@ jobs:
           if [ -z "$PORT" ]; then PORT=22; fi
 
           ssh -i ~/.ssh/id_rsa -o BatchMode=yes -p "$PORT" "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}" <<'EOF'
-            # ensure ownership so apache can read files
             sudo chown -R www-data:www-data /var/www/subscription.deepnapsoftech.com || true
             sudo find /var/www/subscription.deepnapsoftech.com -type d -exec chmod 755 {} \; || true
             sudo find /var/www/subscription.deepnapsoftech.com -type f -exec chmod 644 {} \; || true
 
-            # test apache config and reload
             sudo apache2ctl configtest || true
             sudo systemctl reload apache2 || sudo service apache2 reload || true
 
-            # list top-level files for debug
             echo "Remote folder listing:"
             ls -la /var/www/subscription.deepnapsoftech.com | sed -n '1,200p'
 EOF
