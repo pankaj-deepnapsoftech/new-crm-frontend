@@ -3,7 +3,7 @@ name: Deploy Frontend to VPS (Apache)
 on:
   push:
     branches:
-      - main    # change to your deploy branch if different
+      - main
 
 jobs:
   build-and-deploy:
@@ -25,7 +25,7 @@ jobs:
           npm run build
 
       - name: Sync frontend build to VPS (rsync)
-        uses: burnett01/rsync-deploy@v4
+        uses: burnett01/rsync-deploy@v1.1.16
         with:
           switches: -avzr --delete --chown=www-data:www-data
           path: frontend/build/
@@ -42,11 +42,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            # Ensure ownership is correct (www-data is Apache user)
             sudo chown -R www-data:www-data /var/www/subscription.deepnapsoftech.com || true
             sudo find /var/www/subscription.deepnapsoftech.com -type d -exec chmod 755 {} \; || true
             sudo find /var/www/subscription.deepnapsoftech.com -type f -exec chmod 644 {} \; || true
-
-            # test Apache config and reload
             sudo apache2ctl configtest || true
             sudo systemctl reload apache2 || sudo service apache2 reload || true
