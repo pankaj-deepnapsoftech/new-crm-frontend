@@ -1855,7 +1855,7 @@ const Leads = () => {
                               {/* Actions */}
                               <Td className="flex gap-x-2">
                                 <FaArrowsAlt
-                                  className="text-black hover:scale-110 transition-transform cursor-pointer"
+                                  className="text-blue-800 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
                                   title="Schedule Demo"
                                   onClick={() => {
