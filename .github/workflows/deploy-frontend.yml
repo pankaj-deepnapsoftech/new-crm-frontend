@@ -12,6 +12,14 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    # expose secrets as job env variables to use safely in shell
+    env:
+      VPS_IP: ${{ secrets.VPS_IP }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      REMOTE_PATH: ${{ env.REMOTE_PATH }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,22 +35,19 @@ jobs:
         id: detect
         shell: bash
         run: |
-          # default to repo root
           if [ -f "./frontend/package.json" ]; then
             echo "path=frontend" >> "$GITHUB_OUTPUT"
           elif [ -f "./package.json" ] && grep -qE '"(react-scripts|vite|next|@vue|svelte)"' package.json 2>/dev/null; then
             echo "path=." >> "$GITHUB_OUTPUT"
+          elif [ -f "./app/package.json" ]; then
+            echo "path=app" >> "$GITHUB_OUTPUT"
+          elif [ -f "./web/package.json" ]; then
+            echo "path=web" >> "$GITHUB_OUTPUT"
           else
-            # fallback: if folder named 'app' or 'web' exist, try frontend there
-            if [ -f "./app/package.json" ]; then
-              echo "path=app" >> "$GITHUB_OUTPUT"
-            elif [ -f "./web/package.json" ]; then
-              echo "path=web" >> "$GITHUB_OUTPUT"
-            else
-              echo "path=frontend" >> "$GITHUB_OUTPUT"
-            fi
+            # fallback to frontend even if missing (will error later with readable message)
+            echo "path=frontend" >> "$GITHUB_OUTPUT"
           fi
-          echo "Detected frontend path: ${{ steps.detect.outputs.path }}" || true
+          echo "detected frontend path = ${{ steps.detect.outputs.path }}" || true
 
       - name: Setup Node.js 18
         uses: actions/setup-node@v4
@@ -59,54 +64,49 @@ jobs:
             cd "$FRONTEND_DIR" || (echo "cd to $FRONTEND_DIR failed" && exit 1)
           fi
 
-          echo "Node version:"
-          node -v || true
-          echo "NPM version:"
-          npm -v || true
-
           if [ ! -f package.json ]; then
-            echo "No package.json found in $PWD"
+            echo "ERROR: no package.json found in $PWD"
             ls -la
             exit 1
           fi
 
-          echo "Installing dependencies..."
           npm ci --silent
+          npm run build --if-present
 
-          echo "Running build..."
-          # Support common build commands
-          if grep -q "\"build\"" package.json; then
-            npm run build --if-present
-          else
-            echo "No build script found in package.json"
-            exit 1
-          fi
-
-          echo "Build finished. Build dir listing (pwd):"
-          ls -la
+          echo "Build completed. Showing build/dist (if present):"
+          [ -d build ] && ls -la build || true
+          [ -d dist ] && ls -la dist || true
 
       - name: Prepare SSH key on runner
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          # write private key from job env (exposed from secret)
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-          # add VPS to known_hosts (avoid interactive prompt)
-          if ! ssh-keygen -F "${{ secrets.VPS_IP }}" >/dev/null 2>&1; then
-            ssh-keyscan -H "${{ secrets.VPS_IP }}" >> ~/.ssh/known_hosts || true
+          # add VPS to known_hosts to avoid interactive prompt
+          if [ -n "$VPS_IP" ]; then
+            if ! ssh-keygen -F "$VPS_IP" >/dev/null 2>&1; then
+              ssh-keyscan -H "$VPS_IP" >> ~/.ssh/known_hosts || true
+            fi
+          else
+            echo "WARNING: VPS_IP is empty"
           fi
 
       - name: Rsync build to VPS (over SSH)
         shell: bash
         env:
           FRONTEND_DIR: ${{ steps.detect.outputs.path }}
+          VPS_IP: ${{ env.VPS_IP }}
+          VPS_USER: ${{ env.VPS_USER }}
+          VPS_PORT: ${{ env.VPS_PORT }}
           REMOTE_PATH: ${{ env.REMOTE_PATH }}
         run: |
-          PORT="${{ secrets.VPS_PORT }}"
-          if [ -z "$PORT" ]; then PORT=22; fi
+          # default port if not set
+          if [ -z "$VPS_PORT" ]; then
+            VPS_PORT=22
+          fi
 
-          # determine local build output dir (build/ for CRA, dist/ for Vite)
           if [ "$FRONTEND_DIR" = "." ]; then
             SRC_BASE="$PWD"
           else
@@ -118,35 +118,31 @@ jobs:
           elif [ -d "$SRC_BASE/dist" ]; then
             SRC="$SRC_BASE/dist/"
           else
-            echo "Could not find build output directory (build/ or dist/) under $SRC_BASE"
-            echo "Listing $SRC_BASE:"
+            echo "ERROR: Could not find build output directory (build/ or dist/) under $SRC_BASE"
             ls -la "$SRC_BASE"
             exit 1
           fi
 
-          echo "Rsync from $SRC -> ${ { secrets.VPS_USER } }@${{ secrets.VPS_IP }}:${REMOTE_PATH}"
-          # rsync options: archive, compress, verbose, delete removed files
+          echo "Starting rsync from: $SRC"
+          echo "Rsync target: $VPS_USER@$VPS_IP:$REMOTE_PATH (port $VPS_PORT)"
+
           RSYNC_OPTS="-az --delete --omit-dir-times --no-perms --no-owner --no-group"
 
-          rsync $RSYNC_OPTS -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -p $PORT" \
-            "$SRC" "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}":"${REMOTE_PATH}"/
+          rsync $RSYNC_OPTS -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -p $VPS_PORT" \
+            "$SRC" "$VPS_USER"@"$VPS_IP":"$REMOTE_PATH"/
 
       - name: Fix permissions & reload Apache (remote)
         uses: appleboy/ssh-action@v0.1.8
         with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
+          host: ${{ env.VPS_IP }}
+          username: ${{ env.VPS_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: 22
+          port: ${{ env.VPS_PORT || '22' }}
           script: |
-            # ensure ownership so Apache can read files
             sudo chown -R www-data:www-data /var/www/subscription.deepnapsoftech.com || true
             sudo find /var/www/subscription.deepnapsoftech.com -type d -exec chmod 755 {} \; || true
             sudo find /var/www/subscription.deepnapsoftech.com -type f -exec chmod 644 {} \; || true
-
-            # test apache config and reload (safe)
             sudo apache2ctl configtest || true
             sudo systemctl reload apache2 || sudo service apache2 reload || true
-
-            echo "Remote folder listing (top):"
+            echo "Remote folder listing:"
             ls -la /var/www/subscription.deepnapsoftech.com | sed -n '1,200p'
