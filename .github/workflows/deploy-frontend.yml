@@ -28,72 +28,62 @@ jobs:
           npm ci
           npm run build
 
-      # --- prepare SSH key on runner ---
       - name: Prepare SSH key
+        shell: bash
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # if you want to avoid host key prompts add known_hosts entry (recommended)
-          # replace with your VPS host or use the IP: ${{ secrets.VPS_IP }}
+          # Add remote host to known_hosts to avoid interactive prompt
           if ! ssh-keygen -F "${{ secrets.VPS_IP }}" >/dev/null 2>&1; then
             ssh-keyscan -H "${{ secrets.VPS_IP }}" >> ~/.ssh/known_hosts || true
           fi
-        shell: bash
 
       - name: Verify SSH connection (debug)
+        shell: bash
         run: |
-          echo "Testing SSH connection to ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} (port ${ { secrets.VPS_PORT } })"
-          # Use port if provided otherwise default 22
+          # Use VPS_PORT secret if set, otherwise default to 22
           PORT="${{ secrets.VPS_PORT }}"
           if [ -z "$PORT" ]; then PORT=22; fi
 
-          # Quick connection test: print remote uname and free disk
-          ssh -i ~/.ssh/id_rsa -o BatchMode=yes -p $PORT -o ConnectTimeout=10 "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}" \
+          echo "Testing SSH connection to ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} on port $PORT"
+          ssh -i ~/.ssh/id_rsa -o BatchMode=yes -p "$PORT" -o ConnectTimeout=10 "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}" \
             "echo 'SSH_OK'; uname -a; df -h / || true" || (echo "SSH connection failed" && exit 1)
-        shell: bash
 
       - name: Rsync build to VPS (over SSH)
+        shell: bash
         run: |
           PORT="${{ secrets.VPS_PORT }}"
           if [ -z "$PORT" ]; then PORT=22; fi
 
-          # ensure local build exists
           if [ ! -d "${{ env.BUILD_PATH }}" ]; then
-            echo "Build folder not found: ${{ env.BUILD_PATH }}"; ls -la
+            echo "Build folder not found: ${{ env.BUILD_PATH }}"
+            ls -la
             exit 1
           fi
 
-          # rsync options:
-          # -a = archive, -v = verbose, -z = compress, --delete = remove obsolete files
-          # Adjust --chown if you want files to be owned by www-data immediately.
+          # rsync options: archive, compress, delete removed files
           RSYNC_OPTS="-az --delete --omit-dir-times --no-perms --no-owner --no-group"
 
-          # If you want rsync to set owner to www-data (requires connecting as root or sudo), use:
-          # RSYNC_OPTS="-az --delete --chown=www-data:www-data"
-
-          echo "Starting rsync to ${ { secrets.VPS_USER } }@${ { secrets.VPS_IP } }:${{ env.REMOTE_PATH }}"
-          rsync $RSYNC_OPTS -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -p $PORT" "${{ env.BUILD_PATH }}" "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}":"${{ env.REMOTE_PATH }}"/
-        shell: bash
+          echo "Starting rsync to ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:${{ env.REMOTE_PATH }}"
+          rsync $RSYNC_OPTS -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -p $PORT" \
+            "${{ env.BUILD_PATH }}" "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}":"${{ env.REMOTE_PATH }}"/
 
       - name: Fix permissions & reload Apache (remote)
+        shell: bash
         run: |
           PORT="${{ secrets.VPS_PORT }}"
           if [ -z "$PORT" ]; then PORT=22; fi
 
-          ssh -i ~/.ssh/id_rsa -o BatchMode=yes -p $PORT "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}" <<'EOF'
-            # ensure ownership so apache can read files
+          ssh -i ~/.ssh/id_rsa -o BatchMode=yes -p "$PORT" "${{ secrets.VPS_USER }}"@"${{ secrets.VPS_IP }}" <<'EOF'
             sudo chown -R www-data:www-data /var/www/subscription.deepnapsoftech.com || true
             sudo find /var/www/subscription.deepnapsoftech.com -type d -exec chmod 755 {} \; || true
             sudo find /var/www/subscription.deepnapsoftech.com -type f -exec chmod 644 {} \; || true
 
-            # test apache config and reload
             sudo apache2ctl configtest || true
             sudo systemctl reload apache2 || sudo service apache2 reload || true
 
-            # list top-level files for debug
             echo "Remote folder listing:"
             ls -la /var/www/subscription.deepnapsoftech.com | sed -n '1,200p'
 EOF
-        shell: bash
