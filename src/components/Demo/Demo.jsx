@@ -10,6 +10,18 @@ import {
   Tbody,
   Td,
   Badge,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  Input,
+  FormControl,
+  FormLabel,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react";
 import { FaCaretDown, FaCaretUp } from "react-icons/fa";
@@ -75,6 +87,10 @@ const Demo = () => {
   const [loading, setLoading] = useState(true);
   const [dataId, setDataId] = useState();
   const [completingLeadId, setCompletingLeadId] = useState(null);
+  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [riFile, setRiFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const dispatch = useDispatch();
 
   const baseURL = process.env.REACT_APP_BACKEND_URL;
@@ -84,30 +100,47 @@ const Demo = () => {
       bg: "#e6f7ff",
       text: "#1890ff",
     },
-    "completed": {
+    completed: {
       bg: "#f6ffed",
       text: "#52c41a",
     },
   };
 
-  const markAsCompleted = async (leadId) => {
-    setCompletingLeadId(leadId);
+  const openCompletionModal = (leadId) => {
+    setSelectedLeadId(leadId);
+    setRiFile(null);
+    onOpen();
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    setRiFile(file);
+  };
+
+  const markAsCompleted = async () => {
+    if (!riFile) {
+      alert("Please select an RI file before completing the demo.");
+      return;
+    }
+
+    setUploading(true);
     try {
-      const response = await fetch(`${baseURL}lead/edit-lead`, {
+      const formData = new FormData();
+      formData.append("leadId", selectedLeadId);
+      formData.append("riFile", riFile);
+
+      const response = await fetch(`${baseURL}lead/complete-demo`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${cookies?.access_token}`,
         },
-        body: JSON.stringify({
-          leadId: leadId,
-          status: "Completed",
-        }),
+        body: formData,
       });
 
       const result = await response.json();
       if (result.success) {
         fetchScheduledDemoLeads();
+        onClose();
         alert("Demo marked as completed successfully!");
       } else {
         alert("Failed to mark demo as completed: " + result.message);
@@ -116,7 +149,7 @@ const Demo = () => {
       console.error("Error marking demo as completed:", error);
       alert("Error marking demo as completed");
     } finally {
-      setCompletingLeadId(null);
+      setUploading(false);
     }
   };
 
@@ -134,7 +167,8 @@ const Demo = () => {
       const data = await response.json();
       if (data.success) {
         const scheduledDemoLeads = data.leads.filter(
-          (lead) => lead.status === "Scheduled Demo" || lead.status === "Completed"
+          (lead) =>
+            lead.status === "Scheduled Demo" || lead.status === "Completed"
         );
 
         const transformedData = scheduledDemoLeads.map((lead) => ({
@@ -206,7 +240,7 @@ const Demo = () => {
     );
   }
 
-  console.log(page)
+  console.log(page);
 
   return (
     <Box p={6}>
@@ -214,8 +248,10 @@ const Demo = () => {
         <Heading size="md" mb={4}>
           Scheduled Demos
         </Heading>
-        <button className="border border-blue-700 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-700 hover:text-white transition-colors"
-        onClick={fetchScheduledDemoLeads}>
+        <button
+          className="border border-blue-700 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-700 hover:text-white transition-colors"
+          onClick={fetchScheduledDemoLeads}
+        >
           Refresh
         </button>
       </div>
@@ -361,22 +397,15 @@ const Demo = () => {
                       <Td className="flex gap-x-2">
                         <button
                           className={`text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
-                            completingLeadId === row.original?._id
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : row.original?.status === "Completed"
+                            row.original?.status === "Completed"
                               ? "bg-gray-400 cursor-not-allowed"
                               : "bg-green-500 hover:bg-green-600"
                           }`}
-                          onClick={() => markAsCompleted(row.original?._id)}
-                          disabled={
-                            completingLeadId === row.original?._id ||
-                            row.original?.status === "Completed"
-                          }
+                          onClick={() => openCompletionModal(row.original?._id)}
+                          disabled={row.original?.status === "Completed"}
                         >
-                          {completingLeadId === row.original?._id
-                            ? "Processing..."
-                            : row.original?.status === "Completed"
-                            ? "Mark as Completed"
+                          {row.original?.status === "Completed"
+                            ? "Completed"
                             : "Mark as Completed"}
                         </button>
                       </Td>
@@ -408,6 +437,50 @@ const Demo = () => {
           </div>
         </div>
       )}
+
+      {/* RI Upload Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Upload RI Document</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl>
+              <FormLabel>Select RI File</FormLabel>
+              <Input
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+                border="1px dashed #ccc"
+                p={2}
+              />
+              <Text fontSize="sm" color="gray.500" mt={2}>
+                Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG
+              </Text>
+              {riFile && (
+                <Text fontSize="sm" color="green.500" mt={2}>
+                  Selected: {riFile.name}
+                </Text>
+              )}
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="green"
+              onClick={markAsCompleted}
+              isLoading={uploading}
+              loadingText="Uploading..."
+              disabled={!riFile}
+            >
+              Complete Demo
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
