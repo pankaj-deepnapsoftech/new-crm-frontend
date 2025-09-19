@@ -89,7 +89,7 @@ const MoveToDemo = ({
       </h1>
 
       <div className="mt-8 px-5">
-        <h2 className="text-2xl font-bold py-5 text-center mb-6 border-y bg-black text-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold py-5 text-center mb-6 border-y bg-blue-800 text-white rounded-lg shadow-md">
           Schedule Demo
         </h2>
 
@@ -178,7 +178,7 @@ const MoveToDemo = ({
             {/* Submit Button */}
             <Button
               type="submit"
-              className="mt-1 w-full py-3 text-white bg-black font-bold rounded-lg"
+              className="mt-1 w-full py-3 text-white bg-blue-800 font-bold rounded-lg"
               colorScheme="black"
               isLoading={isLoading}
             >

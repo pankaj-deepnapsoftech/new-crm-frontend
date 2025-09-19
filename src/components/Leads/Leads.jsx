@@ -1863,7 +1863,7 @@ const Leads = () => {
 
                                 {/* Schedule Demo */}
                                 <FaArrowsAlt
-                                  className="text-blue-500 hover:scale-110 transition-transform cursor-pointer"
+                                  className="text-blue-800 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
                                   title="Schedule Demo"
                                   onClick={() => {
