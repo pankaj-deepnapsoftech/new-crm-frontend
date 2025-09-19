@@ -449,14 +449,11 @@ const Demo = () => {
               <FormLabel>Select RI File</FormLabel>
               <Input
                 type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                accept=".xlsx, .xls, .csv"
                 onChange={handleFileUpload}
                 border="1px dashed #ccc"
                 p={2}
               />
-              <Text fontSize="sm" color="gray.500" mt={2}>
-                Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG
-              </Text>
               {riFile && (
                 <Text fontSize="sm" color="green.500" mt={2}>
                   Selected: {riFile.name}
