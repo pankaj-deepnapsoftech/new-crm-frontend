@@ -55,6 +55,7 @@ import {
   FaCaretUp,
   FaFileCsv,
   FaSms,
+  FaUserShield,
   FaWhatsapp,
 } from "react-icons/fa";
 import axios from "axios";
@@ -349,7 +350,6 @@ const Leads = () => {
   };
 
   const baseURL = process.env.REACT_APP_BACKEND_URL;
-
   const fetchAllLeads = async () => {
     setSearchKey("");
     setData([]);
@@ -370,17 +370,22 @@ const Leads = () => {
         throw new Error(data.message);
       }
 
-      const newData = data.leads.filter((item) => item.dataBank !== true);
+      const newData = data.leads.filter(
+        (lead) =>
+          lead.dataBank !== true &&
+          lead?.status !== "Scheduled Demo" &&
+          lead?.status !== "Completed"
+      );
 
       setData(newData);
-
-      setFilteredData(data.leads);
+      setFilteredData(data.leads); // If you want to filter this too, apply same filter
       setLoading(false);
     } catch (err) {
       setLoading(false);
       toast.error(err.message);
     }
   };
+
 
   const fetchLeadSummary = async () => {
     setData([]);
@@ -706,7 +711,7 @@ const Leads = () => {
   };
 
   // filter by status
-
+ 
   const calculateLeadStatus = (filteredData) => {
     const counts = {
       FollowUp: 0,
@@ -1157,7 +1162,7 @@ const Leads = () => {
       setLoading(false);
     }
   };
-  console.log(page)
+  
   return (
     <>
       {!isAllowed && (
@@ -1407,17 +1412,7 @@ const Leads = () => {
                 >
                   Add to data bank
                 </Button>
-                <Button
-                  fontSize={{ base: "12px", md: "14px" }}
-                  paddingX={{ base: "8px", md: "12px" }}
-                  paddingY={{ base: "2px", md: "3px" }}
-                  width={{ base: "100%", md: 200 }}
-                  onClick={kycHandler}
-                  color="white"
-                  backgroundColor="#1640d6"
-                >
-                  KYC
-                </Button>
+               
                 {/* {role === "Super Admin" && (
                   <Button
                     fontSize={{ base: "12px", md: "14px" }}
@@ -1496,6 +1491,7 @@ const Leads = () => {
                       closeDrawerHandler={() => dispatch(closeKYCDrawer())}
                       kycProgress={calculateKYCProgress()}
                       totalLeads={filteredData.length}
+                      dataId={dataId} 
                     />
                   </ClickMenu>
                 )}
@@ -1697,8 +1693,7 @@ const Leads = () => {
                         })}
                       </Thead>
                       <Tbody {...getTableBodyProps()}>
-                        {page.filter((leads) => leads?.original?.status !== "Scheduled Demo" && leads?.original?.status !== "Completed")
-                          .map((row) => {
+                        {page.map((row) => {
                             prepareRow(row);
                           return (
                             <Tr
@@ -1853,9 +1848,22 @@ const Leads = () => {
                               })}
 
                               {/* Actions */}
-                              <Td className="flex gap-x-2">
+                              <Td className="flex items-center gap-x-3">
+                                {/* KYC Button */}
+                               
+                                  
+                                
+                                  <FaUserShield size={20}
+                                    onClick={() => {
+                                      setDataId(row.original?._id);
+                                      dispatch(openKYCDrawer());
+                                    }} className="flex items-center justify-center text-blue-500"  /> 
+                             
+
+
+                                {/* Schedule Demo */}
                                 <FaArrowsAlt
-                                  className="text-black hover:scale-110 transition-transform cursor-pointer"
+                                  className="text-blue-500 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
                                   title="Schedule Demo"
                                   onClick={() => {
@@ -1863,38 +1871,48 @@ const Leads = () => {
                                     dispatch(openMoveToDemoDrawer());
                                   }}
                                 />
+
+                                {/* Contact/Chat */}
                                 <MdContactPhone
-                                  className=" text-blue-500 hover:scale-110 transition-transform"
+                                  className="text-blue-500 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
+                                  title="Contact Customer"
                                   onClick={() =>
                                     showChatsHandler({
                                       id: row.original?._id,
                                       customer_name: row.original?.name,
                                     })
                                   }
-                                ></MdContactPhone>
-
-                                <MdOutlineVisibility
-                                  className=" text-blue-500 hover:scale-110 transition-transform"
-                                  size={20}
-                                  onClick={() =>
-                                    showDetailsHandler(row.original?._id)
-                                  }
                                 />
-                                <MdEdit
-                                  className=" text-yellow-500 hover:scale-110 transition-transform"
+
+                                {/* View Details */}
+                                <MdOutlineVisibility
+                                  className="text-blue-500 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
+                                  title="View Details"
+                                  onClick={() => showDetailsHandler(row.original?._id)}
+                                />
+
+                                {/* Edit */}
+                                <MdEdit
+                                  className="text-yellow-500 hover:scale-110 transition-transform cursor-pointer"
+                                  size={20}
+                                  title="Edit Lead"
                                   onClick={() => editHandler(row.original?._id)}
                                 />
+
+                                {/* Delete */}
                                 <MdDeleteOutline
-                                  className="text-red-500 hover:scale-110 transition-transform"
+                                  className="text-red-500 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
+                                  title="Delete Lead"
                                   onClick={() => {
                                     setLeadDeleteId(row.original?._id);
                                     confirmDeleteHandler();
                                   }}
                                 />
                               </Td>
+
                             </Tr>
                           );
                         })}

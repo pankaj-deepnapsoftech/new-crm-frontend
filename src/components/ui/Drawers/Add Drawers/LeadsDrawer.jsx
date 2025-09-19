@@ -56,6 +56,7 @@ const LeadsDrawer = ({
     // { value: "Draft", label: "Draft" },
     { value: "New", label: "New" },
     { value: "Demo", label: "Demo" },
+    { value: "Demo Preparation", label: "Demo Preparation" },
     { value: "In Negotiation", label: "In Negotiation" },
     { value: "Completed", label: "Completed" },
     { value: "Loose", label: "Loose" },
@@ -553,7 +554,7 @@ const LeadsDrawer = ({
             </>
           )}
 
-          <div className="mt-2 mb-5">
+          {statusId?.value === "Demo Preparation" && <div className="mt-2 mb-5">
             <label htmlFor="demoPdf" className="block mb-2 text-sm font-semibold text-gray-700">
               Attach Demo File
             </label>
@@ -583,7 +584,7 @@ const LeadsDrawer = ({
                 </button>
               </div>
             </div>
-          </div>
+          </div>}
           {
             showPreviewImage && (
               <div>

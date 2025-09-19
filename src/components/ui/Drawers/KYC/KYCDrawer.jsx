@@ -1,36 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { BiX } from "react-icons/bi";
-import { 
-  Box, 
-  Progress, 
-  Text, 
-  VStack, 
-  HStack, 
-  Badge, 
-  Input, 
-  FormControl, 
-  FormLabel, 
+import {
+  Box,
+  Progress,
+  Text,
+  VStack,
+  HStack,
+  Badge,
+  Input,
+  FormControl,
+  FormLabel,
   Textarea,
   Select,
   Button
 } from "@chakra-ui/react";
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useCookies } from 'react-cookie';
 
-const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
+const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads, dataId }) => {
   const [kycData, setKycData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    status: '',
-    source: '',
-    assigned: '',
-    notes: '',
-    prcQt: '',
-    location: '',
-    leadCategory: ''
+    annual_turn_over: '',
+    company_type: '',
+    company_located: '',
+    company_tenure: '',
+    kyc_remarks: ''
   });
 
   const [currentProgress, setCurrentProgress] = useState(0);
-
+  const [cookies] = useCookies();
   const getProgressColor = (progress) => {
     if (progress >= 80) return "green";
     if (progress >= 60) return "yellow";
@@ -46,22 +44,28 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
   };
 
   // Calculate progress based on filled fields
-  const calculateProgress = (data) => {
-    const totalFields = 10;
-    let filledFields = 0;
+  const calculateKYCProgress = (lead) => {
+    const kycFields = [
+      "annual_turn_over",
+      "company_type",
+      "company_located",
+      "company_tenure",
+      "kyc_remarks",
+    ];
 
-    Object.values(data).forEach(value => {
-      if (value && value.trim() !== '') {
-        filledFields++;
+    let filled = 0;
+    kycFields.forEach((field) => {
+      if (lead[field] && lead[field].trim() !== "") {
+        filled++;
       }
     });
 
-    return Math.round((filledFields / totalFields) * 100);
+    return Math.round((filled / kycFields.length) * 100); // % complete
   };
 
   // Update progress when KYC data changes
   useEffect(() => {
-    const progress = calculateProgress(kycData);
+    const progress = calculateKYCProgress(kycData);
     setCurrentProgress(progress);
   }, [kycData]);
 
@@ -71,46 +75,69 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
       [field]: value
     }));
   };
+  // console.log(dataId)
+  const handleSubmit = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}lead/kyc`,
+        {
+          _id:dataId,
+          annual_turn_over: kycData.annual_turn_over,
+          company_type: kycData.company_type,
+          company_located: kycData.company_located,
+          company_tenure: kycData.company_tenure,
+          kyc_remarks: kycData.kyc_remarks,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${cookies?.access_token}`,
+          },
+        }
+      );
 
-  const handleSubmit = () => {
-    // Here you can add logic to save the KYC data
-    console.log('KYC Data:', kycData);
-    alert('KYC data saved successfully!');
+      if (response.data.success) {
+        toast.success("KYC saved/updated successfully!");
+        closeDrawerHandler(); // close modal
+      } else {
+        toast.error(response.data.message || "Failed to save KYC");
+      }
+    } catch (error) {
+      console.error("KYC Error:", error);
+      toast.error(error.response?.data?.message);
+    }
   };
 
-  const statusOptions = [
-    { value: "New", label: "New" },
-    { value: "In Negotiation", label: "In Negotiation" },
-    { value: "Completed", label: "Completed" },
-    { value: "Loose", label: "Loose" },
-    { value: "Cancelled", label: "Cancelled" },
-    { value: "Assigned", label: "Assigned" },
-    { value: "On Hold", label: "On Hold" },
-    { value: "Follow Up", label: "Follow Up" },
-  ];
+  useEffect(() => {
+    const fetchLead = async () => {
+      if (!dataId) return;
+      try {
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}lead/lead-details`,
+          { leadId: dataId },
+          {
+            headers: { Authorization: `Bearer ${cookies?.access_token}` },
+          }
+        );
 
-  const sourceOptions = [
-    { value: "Linkedin", label: "Linkedin" },
-    { value: "Social Media", label: "Social Media" },
-    { value: "Website", label: "Website" },
-    { value: "Advertising", label: "Advertising" },
-    { value: "Friend", label: "Friend" },
-    { value: "Professionals Network", label: "Professionals Network" },
-    { value: "Customer Referral", label: "Customer Referral" },
-    { value: "Sales", label: "Sales" },
-    { value: "Digital Marketing", label: "Digital Marketing" },
-    { value: "Upwork", label: "Upwork" },
-    { value: "Gem", label: "Gem" },
-    { value: "Freelancer", label: "Freelancer" },
-    { value: "IndiaMart", label: "IndiaMart" },
-    { value: "Fiverr", label: "Fiverr" },
-  ];
+        if (response.data.success) {
+          const lead = response.data.lead;
+          setKycData({
+            annual_turn_over: lead.annual_turn_over || "",
+            company_type: lead.company_type || "",
+            company_located: lead.company_located || "",
+            company_tenure: lead.company_tenure || "",
+            kyc_remarks: lead.kyc_remarks || "",
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching lead KYC:", err);
+      }
+    };
 
-  const categoryOptions = [
-    { value: "Hot", label: "Hot" },
-    { value: "Warm", label: "Warm" },
-    { value: "Cold", label: "Cold" },
-  ];
+    fetchLead();
+  }, [dataId]);
+
+
 
   return (
     <div
@@ -130,28 +157,27 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
           KYC Information Form
         </h2>
 
-        {/* Progress Display */}
         <Box p={4} borderWidth="1px" borderRadius="lg" bg="white" shadow="md" mb={4}>
           <Text fontSize="lg" fontWeight="bold" mb={3} textAlign="center">
             Current Progress
           </Text>
-          
+
           <VStack spacing={3}>
             <Text fontSize="2xl" fontWeight="bold" color={getProgressColor(currentProgress)}>
               {currentProgress}%
             </Text>
-            
-            <Progress 
-              value={currentProgress} 
-              size="lg" 
+
+            <Progress
+              value={currentProgress}
+              size="lg"
               colorScheme={getProgressColor(currentProgress)}
               borderRadius="full"
               width="100%"
             />
-            
-            <Badge 
-              colorScheme={getProgressColor(currentProgress)} 
-              fontSize="md" 
+
+            <Badge
+              colorScheme={getProgressColor(currentProgress)}
+              fontSize="md"
               p={2}
               borderRadius="md"
             >
@@ -160,156 +186,76 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
           </VStack>
         </Box>
 
-        {/* KYC Form */}
         <VStack spacing={4} align="stretch">
-          {/* Name */}
+          {/* Annual Turnover */}
           <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Name *</FormLabel>
+            <FormLabel fontWeight="bold" fontSize="sm">Annual Turnover</FormLabel>
             <Input
-              value={kycData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Enter full name"
+              value={kycData.annual_turn_over}
+              onChange={(e) => handleInputChange('annual_turn_over', e.target.value)}
+              placeholder="Enter annual turnover (e.g., 10 Cr)"
               size="md"
-              borderColor={kycData.name ? "green.300" : "gray.300"}
+              borderColor={kycData.annual_turn_over ? "green.300" : "gray.300"}
               _focus={{ borderColor: "blue.500" }}
             />
           </FormControl>
 
-          {/* Phone */}
+          {/* Company Type */}
           <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Phone *</FormLabel>
-            <Input
-              value={kycData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="Enter phone number"
-              size="md"
-              borderColor={kycData.phone ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            />
-          </FormControl>
-
-          {/* Email */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Email *</FormLabel>
-            <Input
-              value={kycData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter email address"
-              type="email"
-              size="md"
-              borderColor={kycData.email ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            />
-          </FormControl>
-
-          {/* Status */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Status *</FormLabel>
+            <FormLabel fontWeight="bold" fontSize="sm">Company Type</FormLabel>
             <Select
-              value={kycData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              placeholder="Select status"
+              value={kycData.company_type}
+              onChange={(e) => handleInputChange('company_type', e.target.value)}
+              placeholder="Select company type"
               size="md"
-              borderColor={kycData.status ? "green.300" : "gray.300"}
+              borderColor={kycData.company_type ? "green.300" : "gray.300"}
               _focus={{ borderColor: "blue.500" }}
             >
-              {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              <option value="Limited">Limited</option>
+              <option value="Private Limited">Private Limited</option>
+              <option value="Proprietorship">Proprietorship</option>
+              <option value="Partnership">Partnership</option>
             </Select>
           </FormControl>
 
-          {/* Source */}
+          {/* Company Located */}
           <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Source *</FormLabel>
-            <Select
-              value={kycData.source}
-              onChange={(e) => handleInputChange('source', e.target.value)}
-              placeholder="Select source"
-              size="md"
-              borderColor={kycData.source ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            >
-              {sourceOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Assigned */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Assigned To</FormLabel>
+            <FormLabel fontWeight="bold" fontSize="sm">Company Located</FormLabel>
             <Input
-              value={kycData.assigned}
-              onChange={(e) => handleInputChange('assigned', e.target.value)}
-              placeholder="Enter assigned person"
+              value={kycData.company_located}
+              onChange={(e) => handleInputChange('company_located', e.target.value)}
+              placeholder="Enter company location"
               size="md"
-              borderColor={kycData.assigned ? "green.300" : "gray.300"}
+              borderColor={kycData.company_located ? "green.300" : "gray.300"}
               _focus={{ borderColor: "blue.500" }}
             />
           </FormControl>
 
-          {/* Notes */}
+          {/* Company Tenure */}
           <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Notes</FormLabel>
+            <FormLabel fontWeight="bold" fontSize="sm">Company Tenure</FormLabel>
+            <Input
+              value={kycData.company_tenure}
+              onChange={(e) => handleInputChange('company_tenure', e.target.value)}
+              placeholder="Enter company tenure (e.g., 5 years)"
+              size="md"
+              borderColor={kycData.company_tenure ? "green.300" : "gray.300"}
+              _focus={{ borderColor: "blue.500" }}
+            />
+          </FormControl>
+
+          {/* KYC Remarks */}
+          <FormControl>
+            <FormLabel fontWeight="bold" fontSize="sm"> Remarks</FormLabel>
             <Textarea
-              value={kycData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Enter notes"
+              value={kycData.kyc_remarks}
+              onChange={(e) => handleInputChange('kyc_remarks', e.target.value)}
+              placeholder="Enter KYC remarks (e.g., PAN + GST verified)"
               size="md"
               rows={3}
-              borderColor={kycData.notes ? "green.300" : "gray.300"}
+              borderColor={kycData.kyc_remarks ? "green.300" : "gray.300"}
               _focus={{ borderColor: "blue.500" }}
             />
-          </FormControl>
-
-          {/* PRC QT */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">PRC QT</FormLabel>
-            <Input
-              value={kycData.prcQt}
-              onChange={(e) => handleInputChange('prcQt', e.target.value)}
-              placeholder="Enter PRC QT"
-              size="md"
-              borderColor={kycData.prcQt ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            />
-          </FormControl>
-
-          {/* Location */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Location</FormLabel>
-            <Input
-              value={kycData.location}
-              onChange={(e) => handleInputChange('location', e.target.value)}
-              placeholder="Enter location"
-              size="md"
-              borderColor={kycData.location ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            />
-          </FormControl>
-
-          {/* Lead Category */}
-          <FormControl>
-            <FormLabel fontWeight="bold" fontSize="sm">Lead Category</FormLabel>
-            <Select
-              value={kycData.leadCategory}
-              onChange={(e) => handleInputChange('leadCategory', e.target.value)}
-              placeholder="Select category"
-              size="md"
-              borderColor={kycData.leadCategory ? "green.300" : "gray.300"}
-              _focus={{ borderColor: "blue.500" }}
-            >
-              {categoryOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
           </FormControl>
 
           {/* Submit Button */}
@@ -318,11 +264,12 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads }) => {
             colorScheme="blue"
             size="lg"
             mt={4}
-            isDisabled={currentProgress < 30} // Disable if less than 30% complete
           >
-            Save KYC Data ({currentProgress}% Complete)
+            Save / Update KYC
           </Button>
         </VStack>
+
+
 
         {/* Progress Legend */}
         {/* <Box p={4} borderWidth="1px" borderRadius="lg" bg="gray.50" mt={4}>
