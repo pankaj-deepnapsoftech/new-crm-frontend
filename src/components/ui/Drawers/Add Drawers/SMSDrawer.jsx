@@ -1,49 +1,53 @@
 import { Button, FormControl, FormLabel, Input, Textarea } from "@chakra-ui/react";
+import axios from "axios";
 import React, { useState } from "react";
 import { useCookies } from "react-cookie";
 import { BiX } from "react-icons/bi";
 import { toast } from "react-toastify";
 
-const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names }) => {
-   
-    const [templateId, setTemplateId] = useState();
-    const [message, setMessage] = useState();
-    const [cookies] = useCookies();
+const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names, leads }) => {
 
-    const sendBulkSMSHandler = async (e)=>{
-        e.preventDefault();
+  const [cookies] = useCookies();
+  const sendBulkSMSHandler = async (e) => {
+    e.preventDefault();
 
-        if(mobiles.length === 0){
-          toast.error('No lead selected');
-          closeDrawerHandler();
-          return;
-        }
-        
-        try {
-            const response = await fetch(process.env.REACT_APP_BACKEND_URL+'sms/send-bulk-sms', {
-                method: "POST",
-                headers: {
-                    'Content-Type': "Application/json",
-                    "Authorization": `Bearer ${cookies?.access_token}`
-                },
-                body: JSON.stringify({
-                    mobiles,
-                    templateId,
-                    message,
-                    name: names,
-                })
-            });
-            const data = await response.json();
-            if(!data?.success){
-                throw new Error(data.message);
-            }
-            toast.success(data.message);
-            fetchAllLeads();
-            closeDrawerHandler();
-        } catch (error) {
-            toast.error(error?.message);
-        }
+    if (mobiles.length === 0) {
+      toast.error("No lead selected");
+      closeDrawerHandler();
+      return;
     }
+
+    try {
+      const { data } = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}lead/bulk-sms`,
+        {
+          leadIds: leads,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cookies?.access_token}`,
+          },
+        }
+      );
+
+      if (!data?.success) {
+        throw new Error(data.message);
+      }
+
+      toast.success(data.message);
+      fetchAllLeads();
+      closeDrawerHandler();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message);
+    }
+  };
+
+  if (mobiles.length === 0) {
+    toast.error('No lead selected');
+    closeDrawerHandler();
+    return;
+  }
 
   return (
     <div
@@ -63,26 +67,31 @@ const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names }) => {
           Send Bulk SMS
         </h2>
 
+
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Selected Recipients</h3>
+          <div className="max-h-[300px] overflow-y-auto border rounded-md p-3 bg-gray-50 space-y-2">
+            {mobiles.length > 0 ? (
+              mobiles.map((mobile, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center px-3 py-2 border rounded bg-white shadow-sm"
+                >
+                  <span className="font-medium text-gray-800">{names[index]}</span>
+                  <span className="text-sm text-gray-600">{mobile}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 italic">No recipients selected.</p>
+            )}
+          </div>
+        </div>
+
+
         <form onSubmit={sendBulkSMSHandler}>
-          <FormControl className="mt-3 mb-5" isRequired>
-            <FormLabel fontWeight="bold">Template ID</FormLabel>
-            <Input
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              type="text"
-              placeholder="Name"
-            />
-          </FormControl>
-          <FormControl className="mt-3 mb-5" >
-            <FormLabel fontWeight="bold">Message</FormLabel>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-          </FormControl>
           <Button
             type="submit"
-            className="mt-1"
+            className="w-full"
             color="white"
             backgroundColor="#1640d6"
           >
@@ -90,6 +99,7 @@ const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names }) => {
           </Button>
         </form>
       </div>
+
     </div>
   );
 };

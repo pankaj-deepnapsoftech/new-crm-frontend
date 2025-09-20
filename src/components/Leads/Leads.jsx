@@ -213,7 +213,7 @@ const Leads = () => {
   const [templateName, setTemplateName] = useState("");
   const [templateLang, setTemplateLang] = useState("en");
   const [bulkName, setBulkName] = useState([]);
-
+ 
   const {
     getTableProps,
     getTableBodyProps,
@@ -470,6 +470,19 @@ const Leads = () => {
     } finally {
       setBulkUploading(false);
     }
+  };
+ 
+  const bulkSMSHandler = (e) => {
+    const rows = document.getElementsByName("select");
+    const selectedRows = Array.from(rows).filter((el) => el.checked);
+    if (selectedRows.length === 0) {
+      toast.error("No lead selected");
+      return;
+    }
+    const selectedRowIds = selectedRows.map((e) => e.value);
+    setSelected(selectedRowIds); 
+
+    dispatch(openSendSMSDrawer());
   };
 
   const selectAllHandler = () => {
@@ -1098,7 +1111,7 @@ const Leads = () => {
     } else {
       setComponents([{ type: "text", text: "" }]);
       setTemplateName("");
-      setTemplateLang("en");
+      setTemplateLang("en_US");
       setOpen(true);
     }
   };
@@ -1280,9 +1293,7 @@ const Leads = () => {
                   paddingX={{ base: "8px", md: "12px" }}
                   paddingY={{ base: "2px", md: "3px" }}
                   width={{ base: "100%", md: 130 }}
-                  onClick={() => {
-                    dispatch(openSendSMSDrawer());
-                  }}
+                  onClick={bulkSMSHandler}
                   rightIcon={<FaSms size={28} />}
                   color="#ffffff"
                   backgroundColor="#1640d6"
@@ -1541,19 +1552,21 @@ const Leads = () => {
                     right={0}
                     closeContextMenuHandler={() => {
                       dispatch(closeSendSMSDrawer());
-                      setBulkSMSMobiles([]);
-                      setBulkName([]);
+                      // setBulkSMSMobiles([]);
+                      // setBulkName([]);
                     }}
+                    leads={selected}
                   >
-                    <SMSDrawer
+                    <SMSDrawer 
                       fetchAllLeads={fetchAllLeads}
                       closeDrawerHandler={() => {
                         dispatch(closeSendSMSDrawer());
-                        setBulkSMSMobiles([]);
-                        setBulkName([]);
+                        // setBulkSMSMobiles([]);
+                        // setBulkName([]);
                       }}
                       mobiles={bulkSMSMobiles}
                       names={bulkName}
+                      leads={selected} 
                     />
                   </ClickMenu>
                 )}
@@ -1728,6 +1741,7 @@ const Leads = () => {
                                         value={cell.row.original._id}
                                         name="select"
                                         type="checkbox"
+                                        className="cursor-pointer"
                                         onChange={(e) => {
                                           selectOneHandler(
                                             e,
