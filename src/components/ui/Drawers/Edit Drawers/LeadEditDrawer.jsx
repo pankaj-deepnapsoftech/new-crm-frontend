@@ -46,6 +46,8 @@ const LeadEditDrawer = ({ dataId: id, closeDrawerHandler, fetchAllLeads }) => {
   const statusOptionsList = [
     // { value: "Draft", label: "Draft" },
     { value: "New", label: "New" },
+    { value: "Demo", label: "Demo" },
+    { value: "Demo Preparation", label: "Demo Preparation" },
     { value: "In Negotiation", label: "In Negotiation" },
     { value: "Completed", label: "Completed" },
     { value: "Loose", label: "Loose" },
