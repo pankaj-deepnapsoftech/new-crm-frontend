@@ -39,6 +39,8 @@ import moment from "moment";
 import { useDispatch } from "react-redux";
 import { openMoveToDemoDrawer } from "../../redux/reducers/misc";
 
+import { toast } from "react-toastify";
+
 const columns = [
   {
     Header: "Created By",
@@ -352,7 +354,7 @@ const Demo = () => {
       if (result.success) {
         fetchScheduledDemoLeads();
         onClose();
-        alert("Demo marked as completed successfully!");
+        toast.success("Demo marked as completed successfully!");
       } else {
         alert("Failed to mark demo as completed: " + result.message);
       }
