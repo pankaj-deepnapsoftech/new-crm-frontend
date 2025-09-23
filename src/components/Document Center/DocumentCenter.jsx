@@ -434,16 +434,16 @@ const DocumentCenter = () => {
                     </form>
                 </div>
             </div>
-            <div className="p-4">
+            <div className="p-4 ">
                 {documents?.length > 0 ? (
-                    <div className="overflow-hidden rounded-md border border-gray-300 shadow-sm">
-                        <table className="min-w-full bg-white">
+                    <div className="overflow-x-auto whitespace-nowrap rounded-md border border-gray-300 shadow-sm">
+                        <table className="min-w-full bg-white ">
                             <thead className="bg-gray-100">
                                 <tr>
                                     <th className="text-left px-4 py-2 border-b">Document Name</th>
                                     <th className="text-left px-4 py-2 border-b">Category</th>
                                     <th className="text-left px-4 py-2 border-b">Image</th>
-                                    <th className="text-center px-4 py-2 border-b">Action</th>
+                                    <th className="text-start pl-12 px-4 py-2 border-b">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
