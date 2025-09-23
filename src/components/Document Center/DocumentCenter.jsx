@@ -3,7 +3,7 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
 import { useCookies } from "react-cookie";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify"; 
 import { MdDelete } from "react-icons/md";
 import { RiEdit2Fill } from "react-icons/ri";
 import { FaDownload } from "react-icons/fa6";
@@ -243,20 +243,19 @@ const DocumentCenter = () => {
     }, [showModal]);
     useEffect(() => {
         if (edittable) {
-            setFilePreview(edittable?.documentFile);
-            setFile(fileInputRef?.value);
+            setFilePreview(edittable.documentFile || null);
+            setFile(null); 
         } else {
-            setFilePreview(null);
             setFile(null);
             setFilePreview(null);
             formik.resetForm();
         }
-
-
     }, [edittable, showModal]);
+;
 
 
-    console.log(file)
+    // console.log(filePreview)
+    // console.log(edittable)
     return (
         <div className="">
 
@@ -312,23 +311,38 @@ const DocumentCenter = () => {
                                     {formik.errors.documentFile}
                                 </p>
                             )}
-                            {file && (
+                            {(file || filePreview) && (
                                 <div className="mt-2">
-                                    {file.type.startsWith("image/") ? (
-                                        <img
-                                            src={filePreview}
-                                            alt="preview"
-                                            className="h-24 w-24 object-cover rounded-md"
-                                        />
-                                    ) : file.type === "application/pdf" ? (
-                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-md w-fit">
-                                            📄 {file.name}
-                                        </div>
+                                    {file ? (
+                                        file.type.startsWith("image/") ? (
+                                            <img
+                                                src={filePreview}
+                                                alt="preview"
+                                                className="h-24 w-24 object-cover rounded-md"
+                                            />
+                                        ) : file.type === "application/pdf" ? (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-md w-fit">
+                                                📄 {file.name}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">Unknown file type</p>
+                                        )
                                     ) : (
-                                        <p className="text-sm text-gray-500">Unknown file type</p>
+                                        filePreview?.endsWith(".pdf") ? (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-md w-fit">
+                                                📄 Existing PDF
+                                            </div>
+                                        ) : (
+                                            <img
+                                                src={filePreview}
+                                                alt="preview"
+                                                className="h-24 w-24 object-cover rounded-md"
+                                            />
+                                        )
                                     )}
                                 </div>
                             )}
+
                         </div>
 
 
