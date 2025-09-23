@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Box,
   Heading,
@@ -24,7 +25,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react";
-import { FaCaretDown, FaCaretUp } from "react-icons/fa";
+import { FaCaretDown, FaCaretUp, FaDownload } from "react-icons/fa";
 import {
   MdContactPhone,
   MdOutlineVisibility,
@@ -90,6 +91,7 @@ const Demo = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [riFile, setRiFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const dispatch = useDispatch();
 
@@ -117,19 +119,28 @@ const Demo = () => {
     setRiFile(file);
   };
 
-  const markAsCompleted = async () => {
-    if (!riFile) {
-      alert("Please select an RI file before completing the demo.");
-      return;
-    }
-
-    setUploading(true);
+  const testImageService = async () => {
     try {
-      const formData = new FormData();
-      formData.append("leadId", selectedLeadId);
-      formData.append("riFile", riFile);
+      console.log("Testing image service connectivity...");
+      const response = await fetch("https://images.deepmart.shop/upload", {
+        method: "GET",
+      });
+      console.log("Service test response status:", response.status);
+      return response.status;
+    } catch (error) {
+      console.error("Service test failed:", error);
+      return null;
+    }
+  };
 
-      const response = await fetch(`${baseURL}lead/complete-demo`, {
+  const uploadRIFileToLocalService = async (file) => {
+    try {
+      console.log("Attempting local upload fallback...");
+
+      const formData = new FormData();
+      formData.append("riFile", file);
+
+      const response = await fetch(`${baseURL}lead/upload-ri`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${cookies?.access_token}`,
@@ -138,6 +149,206 @@ const Demo = () => {
       });
 
       const result = await response.json();
+      console.log("Local upload response:", result);
+
+      if (result.success && result.fileUrl) {
+        return result.fileUrl;
+      } else {
+        console.error("Local upload failed:", result);
+        return null;
+      }
+    } catch (error) {
+      console.error("Local upload error:", error);
+      return null;
+    }
+  };
+
+  const uploadRIFileToImageService = async (file) => {
+    try {
+      console.log("Starting file upload...");
+      console.log("File details:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+
+      // Test service connectivity first
+      const serviceStatus = await testImageService();
+      if (!serviceStatus) {
+        console.log("External service unavailable, trying local upload...");
+        const localUrl = await uploadRIFileToLocalService(file);
+        if (localUrl) {
+          alert("External service unavailable. File uploaded to local server.");
+          return localUrl;
+        } else {
+          alert(
+            "Both external and local upload failed. Please try again later."
+          );
+          return null;
+        }
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        console.error("File too large:", file.size);
+        alert(
+          "File size is too large. Please select a file smaller than 10MB."
+        );
+        return null;
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        "application/pdf",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        console.error("Invalid file type:", file.type);
+        alert(
+          "Invalid file type. Please select a PDF, Excel, CSV, or Word document."
+        );
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log(
+        "Sending upload request to:",
+        "https://images.deepmart.shop/upload"
+      );
+
+      const res = await axios.post(
+        "https://images.deepmart.shop/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000, // 30 seconds timeout
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            console.log(`Upload progress: ${percentCompleted}%`);
+          },
+        }
+      );
+
+      console.log("Upload response:", res);
+      console.log("Upload response data:", res.data);
+      console.log("Upload response status:", res.status);
+
+      if (res.status === 200 && res.data) {
+        const fileUrl = res.data?.[0];
+        console.log("Extracted file URL:", fileUrl);
+
+        if (!fileUrl) {
+          console.error("No file URL in response");
+          // Try local upload as fallback
+          console.log(
+            "External service returned no URL, trying local upload..."
+          );
+          const localUrl = await uploadRIFileToLocalService(file);
+          if (localUrl) {
+            alert(
+              "External service issue detected. File uploaded to local server."
+            );
+            return localUrl;
+          }
+          return null;
+        }
+
+        return fileUrl;
+      } else {
+        console.error("Unexpected response:", res);
+        // Try local upload as fallback
+        console.log(
+          "External service returned unexpected response, trying local upload..."
+        );
+        const localUrl = await uploadRIFileToLocalService(file);
+        if (localUrl) {
+          alert(
+            "External service issue detected. File uploaded to local server."
+          );
+          return localUrl;
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error("RI file upload failed:", error);
+
+      if (error.response) {
+        // Server responded with error
+        console.error("Server error response:", error.response.data);
+        console.error("Server error status:", error.response.status);
+      } else if (error.request) {
+        // Network error
+        console.error("Network error:", error.request);
+      } else {
+        // Other error
+        console.error("Upload error:", error.message);
+      }
+
+      // Try local upload as fallback
+      console.log("External upload failed, trying local upload...");
+      const localUrl = await uploadRIFileToLocalService(file);
+      if (localUrl) {
+        alert("External service failed. File uploaded to local server.");
+        return localUrl;
+      } else {
+        alert("Both external and local upload failed. Please try again later.");
+        return null;
+      }
+    }
+  };
+
+  const markAsCompleted = async () => {
+    if (!riFile) {
+      alert("Please select an RI file before completing the demo.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      console.log("Starting demo completion process...");
+      console.log("Selected file:", riFile.name);
+
+      // First upload the RI file to the image service
+      const uploadedFileUrl = await uploadRIFileToImageService(riFile);
+      console.log("Upload result:", uploadedFileUrl);
+
+      if (!uploadedFileUrl) {
+        alert("Failed to upload RI file. Please try again.");
+        setUploading(false);
+        return;
+      }
+
+      console.log("Sending completion request with URL:", uploadedFileUrl);
+
+      // Send the lead completion request with the uploaded file URL
+      const response = await fetch(`${baseURL}lead/complete-demo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookies?.access_token}`,
+        },
+        body: JSON.stringify({
+          leadId: selectedLeadId,
+          riFileUrl: uploadedFileUrl,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("Complete demo response:", result);
+
       if (result.success) {
         fetchScheduledDemoLeads();
         onClose();
@@ -150,6 +361,46 @@ const Demo = () => {
       alert("Error marking demo as completed");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const downloadRIFile = async (leadId, leadName) => {
+    try {
+      console.log("Attempting to download RI file for lead:", leadId, leadName);
+
+      const response = await fetch(`${baseURL}lead/download-ri/${leadId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${cookies?.access_token}`,
+        },
+      });
+
+      const result = await response.json();
+      console.log("Download response:", result);
+
+      if (result.success && result.fileUrl) {
+        console.log("File URL received:", result.fileUrl);
+
+        const link = document.createElement("a");
+        link.href = result.fileUrl;
+        link.download = `RI_${leadName}_${leadId}`;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.open(result.fileUrl, "_blank");
+      } else {
+        console.error("Download failed:", result);
+        alert(
+          "Failed to get RI file URL: " + (result.message || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Error downloading RI file:", error);
+      alert("Error downloading RI file: " + error.message);
     }
   };
 
@@ -166,10 +417,16 @@ const Demo = () => {
 
       const data = await response.json();
       if (data.success) {
-        const scheduledDemoLeads = data.leads.filter(
+        let scheduledDemoLeads = data.leads.filter(
           (lead) =>
             lead.status === "Scheduled Demo" || lead.status === "Completed"
         );
+
+        if (statusFilter !== "all") {
+          scheduledDemoLeads = scheduledDemoLeads.filter(
+            (lead) => lead.status.toLowerCase() === statusFilter.toLowerCase()
+          );
+        }
 
         const transformedData = scheduledDemoLeads.map((lead) => ({
           ...lead,
@@ -191,7 +448,7 @@ const Demo = () => {
 
   useEffect(() => {
     fetchScheduledDemoLeads();
-  }, []);
+  }, [statusFilter]);
 
   const {
     getTableProps,
@@ -248,12 +505,24 @@ const Demo = () => {
         <Heading size="md" mb={4}>
           Scheduled Demos
         </Heading>
-        <button
-          className="border border-blue-700 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-700 hover:text-white transition-colors"
-          onClick={fetchScheduledDemoLeads}
-        >
-          Refresh
-        </button>
+        <div className="flex gap-3 items-center">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-gray-300 px-3 py-1 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Status</option>
+            <option value="scheduled demo">Scheduled Demo</option>
+            <option value="completed">Completed</option>
+          </select>
+
+          <button
+            className="border border-blue-700 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-700 hover:text-white transition-colors"
+            onClick={fetchScheduledDemoLeads}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {data.length === 0 ? (
@@ -408,6 +677,24 @@ const Demo = () => {
                             ? "Completed"
                             : "Mark as Completed"}
                         </button>
+
+                        {row.original?.status === "Completed" && (
+                          <button
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors flex items-center gap-1"
+                            onClick={() =>
+                              downloadRIFile(
+                                row.original?._id,
+                                row.original?.name ||
+                                  row.original?.people?.firstname ||
+                                  row.original?.company?.companyname ||
+                                  "Lead"
+                              )
+                            }
+                            title="Download RI File"
+                          >
+                            <FaDownload />
+                          </button>
+                        )}
                       </Td>
                     </Tr>
                   );
@@ -449,7 +736,7 @@ const Demo = () => {
               <FormLabel>Select RI File</FormLabel>
               <Input
                 type="file"
-                accept=".xlsx, .xls, .csv"
+                accept=".xlsx, .xls, .csv, .pdf, .doc, .docx"
                 onChange={handleFileUpload}
                 border="1px dashed #ccc"
                 p={2}
@@ -470,7 +757,7 @@ const Demo = () => {
               colorScheme="green"
               onClick={markAsCompleted}
               isLoading={uploading}
-              loadingText="Uploading..."
+              loadingText="Uploading & Completing..."
               disabled={!riFile}
             >
               Complete Demo

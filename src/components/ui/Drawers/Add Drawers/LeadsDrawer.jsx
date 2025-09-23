@@ -7,6 +7,7 @@ import {
   Textarea,
   typography,
   useStatStyles,
+  Spinner,
 } from "@chakra-ui/react";
 import { BiX } from "react-icons/bi";
 import { useDispatch } from "react-redux";
@@ -30,7 +31,7 @@ const LeadsDrawer = ({
   const [products, setProducts] = useState([]);
   const [prcQt, setPrcQt] = useState();
   const [location, setLocation] = useState();
-
+  const [isLoading,setIsLoading] = useState(false)
   const [productOptionsList, setProductOptionsList] = useState();
   const [selectedProducts, setSelectedProducts] = useState([]);
 
@@ -208,29 +209,41 @@ const LeadsDrawer = ({
   const addLeadHandler = async (e) => {
     e.preventDefault();
 
+    // 👇 START LOADING
+    setIsLoading(true);
+
+    // Validation
     if (!typeId?.value) {
       toast.error("Type not selected");
+      setIsLoading(false); // 👈 ADD THIS
       return;
     }
+
     if (!peopleId?.value && !companyId?.value) {
       toast.error("Individual/Corporate not selected");
+      setIsLoading(false); // 👈 ADD THIS
       return;
     }
+
     if (selectedProducts.length === 0) {
-      toast.error("Atleast 1 product should be selected");
+      toast.error("At least 1 product should be selected");
+      setIsLoading(false); // 👈 ADD THIS
       return;
     }
+
     if (
       statusId?.value === "Follow Up" &&
       (!followupDate || !followupReason || followupReason === "")
     ) {
       toast.error("Follow-up date and Follow-up reason required");
+      setIsLoading(false); // 👈 ADD THIS
       return;
     }
 
     const productsId = selectedProducts.map((p) => p?.value);
     let body = {};
-    let DemoImage = null
+    let DemoImage = null;
+
     if (
       statusId?.value === "Assigned" &&
       assigned?.value &&
@@ -284,13 +297,13 @@ const LeadsDrawer = ({
       });
     }
 
-    const formData = new FormData()
-    formData.append("file", file)
-    DemoImage = await ImageUploader(formData)
-    
+    const formData = new FormData();
+    formData.append("file", file);
+    DemoImage = await ImageUploader(formData);
+
     const payload = {
       ...JSON.parse(body),
-      demoPdf: DemoImage, 
+      demoPdf: DemoImage,
     };
 
     try {
@@ -317,8 +330,11 @@ const LeadsDrawer = ({
       toast.success(data.message);
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setIsLoading(false); // 👈 THIS ensures button is re-enabled
     }
   };
+
 
   useEffect(() => {
     getAllCompanies();
@@ -653,10 +669,17 @@ const LeadsDrawer = ({
           {/* Submit Button */}
           <Button
             type="submit"
-            className="mt-4 w-full py-3 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300"
+            disabled={isLoading}
+            className={`mt-4 w-full py-3 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300 flex items-center justify-center ${isLoading ? "cursor-not-allowed bg-blue-400" : ""}`}
             colorScheme="blue"
           >
-            Submit
+            {isLoading ? (
+              <>
+                <Spinner size="sm" mr={2} /> Submitting...
+              </>
+            ) : (
+              "Submit"
+            )}
           </Button>
         </form>
       </div>

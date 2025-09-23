@@ -20,7 +20,7 @@ import {
   MdAttachMoney,
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { GrConfigure } from "react-icons/gr";
+import { GrConfigure, GrDocumentPdf, GrDocumentStore } from "react-icons/gr";
 import {
   FaFileInvoice,
   FaFileLines,
@@ -761,6 +761,32 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
               <FaDatabase />
             </span>
             <span>Data Bank</span>
+
+            {!checkAccess(auth, "databank")?.isAllowed && (
+              <span className="mt-1">
+                <FaLock size="12" color="#b1b1b1" />
+              </span>
+            )}
+          </li>
+        </NavLink>
+
+        <NavLink
+          to="document-center"
+          className={({ isActive }) =>
+            isActive ? "text-[#1640d6]" : "text-black"
+          }
+          onClick={() => {
+            isMenuOpen && setIsMenuOpen(false);
+          }}
+        >
+          <li
+            className="flex gap-x-2 pl-3 pr-9 py-3 rounded-lg hover:bg-[#e6efff] hover:text-[#1640d6] text-[15px]"
+            onClick={() => changeOnlineStatus(false)}
+          >
+            <span>
+              <GrDocumentStore />
+            </span>
+            <span>Document Center</span>
 
             {!checkAccess(auth, "databank")?.isAllowed && (
               <span className="mt-1">

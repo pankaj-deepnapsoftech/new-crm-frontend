@@ -683,7 +683,7 @@ const DataBank = () => {
                         })}
                       </Thead>
                       <Tbody {...getTableBodyProps()}>
-                        {page.map((row) => {
+                        {page?.map((row) => {
                           prepareRow(row);
 
                           return (
@@ -691,7 +691,7 @@ const DataBank = () => {
                               className="relative hover:bg-gray-100 cursor-pointer text-base lg:text-base"
                               {...row.getRowProps()}
                             >
-                              {row.cells.map((cell) => {
+                              {row?.cells.map((cell) => {
                                 return (
                                   <Td
                                     className={
@@ -793,11 +793,11 @@ const DataBank = () => {
                                           backgroundColor:
                                             sourceStyles[
                                               row.original.source.toLowerCase()
-                                            ].bg,
+                                            ]?.bg,
                                           color:
                                             sourceStyles[
                                               row.original.source.toLowerCase()
-                                            ].text,
+                                            ]?.text,
                                         }}
                                       >
                                         {row.original.source}
