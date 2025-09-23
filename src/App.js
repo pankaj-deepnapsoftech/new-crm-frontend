@@ -46,6 +46,7 @@ import Renewal from "./components/Renewal/Renewal";
 import DataBank from "./components/DataBank/DataBank";
 import ChatIndex from "./components/Chats/ChatIndex";
 import Demo from "./components/Demo/Demo";
+import DocumentCenter from "./components/Document Center/DocumentCenter";
 
 function App() {
   const [showAuthenticationMenu, setShowAuthenticationMenu] = useState(false);
@@ -120,6 +121,7 @@ function App() {
             <Route path="emails" element={<EmailData />} />
             <Route path="renewals" element={<Renewal />} />
             <Route path="databank" element={<DataBank />} />
+            <Route path="document-center" element={<DocumentCenter />} />
             <Route
               path="website-configuration"
               element={<WebsiteConfiguration />}
