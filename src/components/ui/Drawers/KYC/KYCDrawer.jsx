@@ -18,7 +18,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useCookies } from 'react-cookie';
 
-const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads, dataId }) => {
+const KYCDrawer = ({ closeDrawerHandler, dataId }) => {
   const [kycData, setKycData] = useState({
     annual_turn_over: '',
     company_type: '',
@@ -75,7 +75,7 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads, dataId }) => {
       [field]: value
     }));
   };
-  // console.log(dataId)
+  console.log(dataId)
   const handleSubmit = async () => {
     try {
       const response = await axios.post(
@@ -118,15 +118,15 @@ const KYCDrawer = ({ closeDrawerHandler, kycProgress, totalLeads, dataId }) => {
             headers: { Authorization: `Bearer ${cookies?.access_token}` },
           }
         );
-
+         
         if (response.data.success) {
-          const lead = response.data.lead;
+          const lead = response?.data?.lead?.kyc;
           setKycData({
-            annual_turn_over: lead.annual_turn_over || "",
-            company_type: lead.company_type || "",
-            company_located: lead.company_located || "",
-            company_tenure: lead.company_tenure || "",
-            kyc_remarks: lead.kyc_remarks || "",
+            annual_turn_over: lead?.annual_turn_over || "",
+            company_type: lead?.company_type || "",
+            company_located: lead?.company_located || "",
+            company_tenure: lead?.company_tenure || "",
+            kyc_remarks: lead?.kyc_remarks || "",
           });
         }
       } catch (err) {

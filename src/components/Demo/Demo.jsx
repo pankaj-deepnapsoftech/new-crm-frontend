@@ -31,15 +31,19 @@ import {
   MdOutlineVisibility,
   MdEdit,
   MdDeleteOutline,
+  MdEditSquare,
 } from "react-icons/md";
 import { FaArrowsAlt } from "react-icons/fa";
 import { useTable, useSortBy, usePagination } from "react-table";
 import { useCookies } from "react-cookie";
 import moment from "moment";
-import { useDispatch } from "react-redux";
-import { openMoveToDemoDrawer } from "../../redux/reducers/misc";
+import { useDispatch, useSelector } from "react-redux";
+import { closeKYCDrawer, openKYCDrawer, openMoveToDemoDrawer } from "../../redux/reducers/misc";
 
 import { toast } from "react-toastify";
+import { FaUserShield } from "react-icons/fa6";
+import KYCDrawer from "../ui/Drawers/KYC/KYCDrawer";
+import ClickMenu from "../ui/ClickMenu";
 
 const columns = [
   {
@@ -88,7 +92,7 @@ const Demo = () => {
   const [cookies] = useCookies();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dataId, setDataId] = useState();
+  const [dataId, setDataId] = useState(null);
   const [completingLeadId, setCompletingLeadId] = useState(null);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [riFile, setRiFile] = useState(null);
@@ -96,9 +100,9 @@ const Demo = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const dispatch = useDispatch();
-
+  const { kycDrawerIsOpened } = useSelector((state) => state.misc)
   const baseURL = process.env.REACT_APP_BACKEND_URL;
-
+  const [leadData, setLeadData] = useState([])
   const statusStyles = {
     "scheduled demo": {
       bg: "#e6f7ff",
@@ -244,9 +248,7 @@ const Demo = () => {
         }
       );
 
-      console.log("Upload response:", res);
-      console.log("Upload response data:", res.data);
-      console.log("Upload response status:", res.status);
+    
 
       if (res.status === 200 && res.data) {
         const fileUrl = res.data?.[0];
@@ -448,6 +450,35 @@ const Demo = () => {
     }
   };
 
+
+
+  useEffect(() => {
+    const fetchLead = async () => {
+      if (!dataId) return;
+      try {
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}lead/lead-details`,
+          { leadId: dataId },
+          {
+            headers: { Authorization: `Bearer ${cookies?.access_token}` },
+          }
+        );
+
+        if (response.data.success) {
+          const lead = response?.data;
+          setLeadData(lead);
+          console.log(lead)
+        }
+      } catch (err) {
+        console.error("Error fetching lead KYC:", err);
+      }
+    };
+  console.log()
+    fetchLead();
+  }, []);
+
+  console.log(leadData)
+
   useEffect(() => {
     fetchScheduledDemoLeads();
   }, [statusFilter]);
@@ -499,7 +530,6 @@ const Demo = () => {
     );
   }
 
-  console.log(page);
 
   return (
     <Box p={6}>
@@ -620,11 +650,10 @@ const Demo = () => {
                             {/* Lead Type Rendering */}
                             {cell.column.id === "leadtype" && (
                               <span
-                                className={`text-sm rounded-md px-3 py-1 ${
-                                  row.original.leadtype === "People"
-                                    ? "bg-[#fff0f6] text-[#c41d7f]"
-                                    : "bg-[#e6f4ff] text-[#0958d9]"
-                                }`}
+                                className={`text-sm rounded-md px-3 py-1 ${row.original.leadtype === "People"
+                                  ? "bg-[#fff0f6] text-[#c41d7f]"
+                                  : "bg-[#e6f4ff] text-[#0958d9]"
+                                  }`}
                               >
                                 {row.original.leadtype === "People"
                                   ? "Individual"
@@ -666,12 +695,27 @@ const Demo = () => {
 
                       {/* Actions */}
                       <Td className="flex gap-x-2">
+                        <button onClick={() => dispatch(openKYCDrawer())}>
+                          <FaUserShield size={20}
+                            onClick={() => {
+                               setDataId(row.original?._id);
+                               dispatch(openKYCDrawer());
+                            }} 
+                            className="flex items-center justify-center text-blue-500" />
+                        </button>
+          
+                        <button className="flex items-center justify-center text-blue-500" >
+
+                          <MdEditSquare />
+
+                        </button>
+
+
                         <button
-                          className={`text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
-                            row.original?.status === "Completed"
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-green-500 hover:bg-green-600"
-                          }`}
+                          className={`text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors ${row.original?.status === "Completed"
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-500 hover:bg-green-600"
+                            }`}
                           onClick={() => openCompletionModal(row.original?._id)}
                           disabled={row.original?.status === "Completed"}
                         >
@@ -687,9 +731,9 @@ const Demo = () => {
                               downloadRIFile(
                                 row.original?._id,
                                 row.original?.name ||
-                                  row.original?.people?.firstname ||
-                                  row.original?.company?.companyname ||
-                                  "Lead"
+                                row.original?.people?.firstname ||
+                                row.original?.company?.companyname ||
+                                "Lead"
                               )
                             }
                             title="Download RI File"
@@ -767,6 +811,18 @@ const Demo = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {kycDrawerIsOpened && (
+        <ClickMenu
+          top={0}
+          right={0}
+          closeContextMenuHandler={() => dispatch(closeKYCDrawer())}
+        >
+          <KYCDrawer
+            closeDrawerHandler={() => dispatch(closeKYCDrawer())}
+            dataId={dataId}
+          />
+        </ClickMenu>
+      )}
     </Box>
   );
 };
