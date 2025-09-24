@@ -23,6 +23,8 @@ import {
   FormControl,
   FormLabel,
   useDisclosure,
+  Divider,
+  Drawer,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react";
 import { FaCaretDown, FaCaretUp, FaDownload } from "react-icons/fa";
@@ -100,6 +102,8 @@ const Demo = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const dispatch = useDispatch();
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
   const { kycDrawerIsOpened } = useSelector((state) => state.misc)
   const baseURL = process.env.REACT_APP_BACKEND_URL;
   const [leadData, setLeadData] = useState([])
@@ -450,34 +454,31 @@ const Demo = () => {
     }
   };
 
-
-
-  useEffect(() => {
-    const fetchLead = async () => {
-      if (!dataId) return;
-      try {
-        const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}lead/lead-details`,
-          { leadId: dataId },
-          {
-            headers: { Authorization: `Bearer ${cookies?.access_token}` },
-          }
-        );
-
-        if (response.data.success) {
-          const lead = response?.data;
-          setLeadData(lead);
-          console.log(lead)
+  const hanldeEditStatus = async () => {
+    console.log("heyy")
+    if (!dataId) return;
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}lead/lead-details`,
+        { leadId: dataId },
+        {
+          headers: { Authorization: `Bearer ${cookies?.access_token}` },
         }
-      } catch (err) {
-        console.error("Error fetching lead KYC:", err);
+      );
+
+      if (response.data.success) {
+        const lead = response?.data?.lead;
+        setLeadData(lead);
       }
-    };
-  console.log()
-    fetchLead();
+    } catch (err) {
+      console.error("Error fetching lead KYC:", err);
+    }
+  };
+  useEffect(() => {
+    hanldeEditStatus();
   }, []);
 
-  console.log(leadData)
+
 
   useEffect(() => {
     fetchScheduledDemoLeads();
@@ -704,7 +705,13 @@ const Demo = () => {
                             className="flex items-center justify-center text-blue-500" />
                         </button>
           
-                        <button className="flex items-center justify-center text-blue-500" >
+                        <button onClick={() => {
+                          setDataId(row.original?._id); 
+                          hanldeEditStatus(); 
+                          setIsLeadModalOpen(true);          
+                        }}
+                          className="flex items-center justify-center text-blue-500"
+                        > 
 
                           <MdEditSquare />
 
@@ -811,6 +818,111 @@ const Demo = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+         
+      <Drawer
+        isOpen={isLeadModalOpen}
+        onClose={() => setIsLeadModalOpen(false)}
+        size="lg"
+        motionPreset="slideInRight" // 👈 ye line add karo
+        scrollBehavior="inside"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Lead Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {/* Basic Info */}
+            <Box mb={4}>
+              <Text fontWeight="bold">Lead ID:</Text>
+              <Text>{leadData._id}</Text>
+            </Box>
+
+            <Divider />
+
+            {/* People Info */}
+            <Box mt={4}>
+              <Text fontWeight="bold">Contact Person:</Text>
+              <Text>
+                {leadData.people?.firstname} {leadData.people?.lastname}
+              </Text>
+              <Text>Email: {leadData.people?.email}</Text>
+              <Text>Phone: {leadData.people?.phone}</Text>
+            </Box>
+
+            <Divider mt={4} />
+
+            {/* Demo Info */}
+            <Box mt={4}>
+              <Text fontWeight="bold">Demo Details:</Text>
+              <Text>
+                Date & Time:{" "}
+                {leadData.demo?.demoDateTime
+                  ? moment(leadData.demo.demoDateTime).format("DD/MM/YYYY HH:mm")
+                  : "Not Set"}
+              </Text>
+              <Text>Type: {leadData.demo?.demoType || "N/A"}</Text>
+              <Text>Notes: {leadData.demo?.notes || "No notes"}</Text>
+              <Text>Status: {leadData.status}</Text>
+            </Box>
+
+            <Divider mt={4} />
+
+            {/* Product Info */}
+            {leadData.products?.map((product) => (
+              <Box key={product._id} mt={4}>
+                <Text fontWeight="bold">Product:</Text>
+                <Text>Name: {product.name}</Text>
+                <Text>Model: {product.model}</Text>
+                <Text>Category: {product.category?.categoryname}</Text>
+                <Text>Price: ₹{product.price}</Text>
+                <Text>{product.description}</Text>
+                {product.imageUrl && (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    mt={2}
+                    borderRadius="md"
+                  />
+                )}
+              </Box>
+            ))}
+
+            <Divider mt={4} />
+
+            {/* Other Info */}
+            <Box mt={4}>
+              <Text fontWeight="bold">Annual Turnover:</Text>
+              <Text>{leadData.annual_turn_over || "N/A"}</Text>
+
+              <Text fontWeight="bold" mt={2}>
+                RI File:
+              </Text>
+              {leadData.riFile ? (
+                <a
+                  href={leadData.riFile}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "blue" }}
+                >
+                  Download RI File
+                </a>
+              ) : (
+                <Text>No RI File Uploaded</Text>
+              )}
+            </Box>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" onClick={() => setIsLeadModalOpen(false)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Drawer>
+
+
+     
+
       {kycDrawerIsOpened && (
         <ClickMenu
           top={0}
