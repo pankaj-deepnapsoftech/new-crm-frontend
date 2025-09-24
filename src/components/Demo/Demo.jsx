@@ -104,7 +104,7 @@ const Demo = () => {
       bg: "#e6f7ff",
       text: "#1890ff",
     },
-    completed: {
+    "demo completed": {
       bg: "#f6ffed",
       text: "#52c41a",
     },
@@ -421,7 +421,7 @@ const Demo = () => {
       if (data.success) {
         let scheduledDemoLeads = data.leads.filter(
           (lead) =>
-            lead.status === "Scheduled Demo" || lead.status === "Completed"
+            lead.status === "Scheduled Demo" || lead.status === "Demo Completed"
         );
 
         if (statusFilter !== "all") {
@@ -515,7 +515,7 @@ const Demo = () => {
           >
             <option value="all">All Status</option>
             <option value="scheduled demo">Scheduled Demo</option>
-            <option value="completed">Completed</option>
+            <option value="demo completed">Demo Completed</option>
           </select>
 
           <button
