@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Box,
   Heading,
-  TableContainer,
+  Container,
   Text,
   Th,
   Thead,
@@ -25,6 +25,16 @@ import {
   useDisclosure,
   Divider,
   Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  Stack,
+  Select,
+  Textarea,
+  TableContainer,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react";
 import { FaCaretDown, FaCaretUp, FaDownload } from "react-icons/fa";
@@ -40,7 +50,11 @@ import { useTable, useSortBy, usePagination } from "react-table";
 import { useCookies } from "react-cookie";
 import moment from "moment";
 import { useDispatch, useSelector } from "react-redux";
-import { closeKYCDrawer, openKYCDrawer, openMoveToDemoDrawer } from "../../redux/reducers/misc";
+import {
+  closeKYCDrawer,
+  openKYCDrawer,
+  openMoveToDemoDrawer,
+} from "../../redux/reducers/misc";
 
 import { toast } from "react-toastify";
 import { FaUserShield } from "react-icons/fa6";
@@ -104,9 +118,12 @@ const Demo = () => {
   const dispatch = useDispatch();
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
-  const { kycDrawerIsOpened } = useSelector((state) => state.misc)
+  const { kycDrawerIsOpened } = useSelector((state) => state.misc);
   const baseURL = process.env.REACT_APP_BACKEND_URL;
-  const [leadData, setLeadData] = useState([])
+  const [leadData, setLeadData] = useState([]);
+  const [newStatus, setNewStatus] = useState("");
+  const [remark, setRemark] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
   const statusStyles = {
     "scheduled demo": {
       bg: "#e6f7ff",
@@ -251,8 +268,6 @@ const Demo = () => {
           },
         }
       );
-
-    
 
       if (res.status === 200 && res.data) {
         const fileUrl = res.data?.[0];
@@ -412,6 +427,69 @@ const Demo = () => {
     }
   };
 
+  const editScheduleDemo = async () => {
+    if (!dataId || !newStatus) {
+      toast.error("Please select a status");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      console.log("Updating demo with:", {
+        leadId: dataId,
+        status: newStatus,
+        remark,
+      });
+
+      const response = await fetch(`${baseURL}lead/edit-schedule-demo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookies?.access_token}`,
+        },
+        body: JSON.stringify({
+          leadId: dataId,
+          status: newStatus,
+          remark: remark,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("Edit schedule demo response:", result);
+
+      if (result.success) {
+         if (result.customerCreated) {
+          toast.success(
+            "Demo completed and customer record created successfully!",
+            {
+              duration: 5000,
+            }
+          );
+        } else {
+          toast.success(result.message || "Demo status updated successfully!");
+        }
+
+        await fetchScheduledDemoLeads();
+
+        await hanldeEditStatus();
+
+        setNewStatus("");
+        setRemark("");
+
+        setIsLeadModalOpen(false);
+      } else {
+        toast.error(
+          "Failed to update demo: " + (result.message || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Error updating demo:", error);
+      toast.error("Error updating demo: " + error.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const fetchScheduledDemoLeads = async () => {
     setLoading(true);
     try {
@@ -455,7 +533,7 @@ const Demo = () => {
   };
 
   const hanldeEditStatus = async () => {
-    console.log("heyy")
+    console.log("heyy");
     if (!dataId) return;
     try {
       const response = await axios.post(
@@ -469,6 +547,10 @@ const Demo = () => {
       if (response.data.success) {
         const lead = response?.data?.lead;
         setLeadData(lead);
+
+        // Set initial values for status and remark
+        setNewStatus(lead.status || "");
+        setRemark(lead.demo?.remark || "");
       }
     } catch (err) {
       console.error("Error fetching lead KYC:", err);
@@ -477,8 +559,6 @@ const Demo = () => {
   useEffect(() => {
     hanldeEditStatus();
   }, []);
-
-
 
   useEffect(() => {
     fetchScheduledDemoLeads();
@@ -531,7 +611,6 @@ const Demo = () => {
     );
   }
 
-
   return (
     <Box p={6}>
       <div className="flex justify-between items-center mb-4">
@@ -557,7 +636,6 @@ const Demo = () => {
           </button>
         </div>
       </div>
-
       {data.length === 0 ? (
         <Text color="gray.500" textAlign="center" mt={8}>
           No scheduled demos found.
@@ -651,10 +729,11 @@ const Demo = () => {
                             {/* Lead Type Rendering */}
                             {cell.column.id === "leadtype" && (
                               <span
-                                className={`text-sm rounded-md px-3 py-1 ${row.original.leadtype === "People"
-                                  ? "bg-[#fff0f6] text-[#c41d7f]"
-                                  : "bg-[#e6f4ff] text-[#0958d9]"
-                                  }`}
+                                className={`text-sm rounded-md px-3 py-1 ${
+                                  row.original.leadtype === "People"
+                                    ? "bg-[#fff0f6] text-[#c41d7f]"
+                                    : "bg-[#e6f4ff] text-[#0958d9]"
+                                }`}
                               >
                                 {row.original.leadtype === "People"
                                   ? "Individual"
@@ -697,36 +776,66 @@ const Demo = () => {
                       {/* Actions */}
                       <Td className="flex gap-x-2">
                         <button onClick={() => dispatch(openKYCDrawer())}>
-                          <FaUserShield size={20}
+                          <FaUserShield
+                            size={20}
                             onClick={() => {
-                               setDataId(row.original?._id);
-                               dispatch(openKYCDrawer());
-                            }} 
-                            className="flex items-center justify-center text-blue-500" />
+                              setDataId(row.original?._id);
+                              dispatch(openKYCDrawer());
+                            }}
+                            className="flex items-center justify-center text-blue-500"
+                          />
                         </button>
-          
-                        <button onClick={() => {
-                          setDataId(row.original?._id); 
-                          hanldeEditStatus(); 
-                          setIsLeadModalOpen(true);          
-                        }}
-                          className="flex items-center justify-center text-blue-500"
-                        > 
-
-                          <MdEditSquare />
-
-                        </button>
-
 
                         <button
-                          className={`text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors ${row.original?.status === "Completed"
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-green-500 hover:bg-green-600"
-                            }`}
-                          onClick={() => openCompletionModal(row.original?._id)}
-                          disabled={row.original?.status === "Completed"}
+                          onClick={async () => {
+                            const leadId = row.original?._id;
+                            setDataId(leadId);
+
+                            // Fetch lead details directly with the leadId
+                            try {
+                              const response = await axios.post(
+                                `${process.env.REACT_APP_BACKEND_URL}lead/lead-details`,
+                                { leadId: leadId },
+                                {
+                                  headers: {
+                                    Authorization: `Bearer ${cookies?.access_token}`,
+                                  },
+                                }
+                              );
+
+                              if (response.data.success) {
+                                const lead = response?.data?.lead;
+                                setLeadData(lead);
+
+                                // Set initial values for status and remark
+                                setNewStatus(lead.status || "");
+                                setRemark(lead.demo?.remark || "");
+                              }
+                            } catch (err) {
+                              console.error(
+                                "Error fetching lead details:",
+                                err
+                              );
+                              toast.error("Failed to fetch lead details");
+                            }
+
+                            setIsLeadModalOpen(true);
+                          }}
+                          className="flex items-center justify-center text-blue-500"
                         >
-                          {row.original?.status === "Completed"
+                          <MdEditSquare />
+                        </button>
+
+                        <button
+                          className={`text-white px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                            row.original?.status === "Demo Completed"
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-green-500 hover:bg-green-600"
+                          }`}
+                          onClick={() => openCompletionModal(row.original?._id)}
+                          disabled={row.original?.status === "Demo Completed"}
+                        >
+                          {row.original?.status === "Demo Completed"
                             ? "Completed"
                             : "Mark as Completed"}
                         </button>
@@ -738,9 +847,9 @@ const Demo = () => {
                               downloadRIFile(
                                 row.original?._id,
                                 row.original?.name ||
-                                row.original?.people?.firstname ||
-                                row.original?.company?.companyname ||
-                                "Lead"
+                                  row.original?.people?.firstname ||
+                                  row.original?.company?.companyname ||
+                                  "Lead"
                               )
                             }
                             title="Download RI File"
@@ -777,7 +886,6 @@ const Demo = () => {
           </div>
         </div>
       )}
-
       {/* RI Upload Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="md">
         <ModalOverlay />
@@ -818,110 +926,162 @@ const Demo = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-         
       <Drawer
         isOpen={isLeadModalOpen}
         onClose={() => setIsLeadModalOpen(false)}
         size="lg"
-        motionPreset="slideInRight" // 👈 ye line add karo
-        scrollBehavior="inside"
+        placement="right"
+        motionPreset="slideInRight"
       >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Lead Details</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {/* Basic Info */}
-            <Box mb={4}>
-              <Text fontWeight="bold">Lead ID:</Text>
-              <Text>{leadData._id}</Text>
-            </Box>
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">Lead Details</DrawerHeader>
 
-            <Divider />
+          <DrawerBody>
+            <Stack spacing={6}>
+              {/* Contact Person */}
+              <Box p={4} borderWidth="1px" borderRadius="lg" shadow="sm">
+                <Heading size="sm" mb={2}>
+                  Contact Person
+                </Heading>
+                <Text>
+                  {leadData.people?.firstname} {leadData.people?.lastname}
+                </Text>
+                <Text>Email: {leadData.people?.email}</Text>
+                <Text>Phone: {leadData.people?.phone}</Text>
+              </Box>
 
-            {/* People Info */}
-            <Box mt={4}>
-              <Text fontWeight="bold">Contact Person:</Text>
-              <Text>
-                {leadData.people?.firstname} {leadData.people?.lastname}
-              </Text>
-              <Text>Email: {leadData.people?.email}</Text>
-              <Text>Phone: {leadData.people?.phone}</Text>
-            </Box>
+              {/* Demo Details */}
+              <Box p={4} borderWidth="1px" borderRadius="lg" shadow="sm">
+                <Heading size="sm" mb={2}>
+                  Demo Details
+                </Heading>
+                <Text>
+                  Date & Time:{" "}
+                  {leadData.demo?.demoDateTime
+                    ? moment(leadData.demo.demoDateTime).format(
+                        "DD/MM/YYYY HH:mm"
+                      )
+                    : "Not Set"}
+                </Text>
+                <Text>Type: {leadData.demo?.demoType || "N/A"}</Text>
+                <Text>Notes: {leadData.demo?.notes || "No notes"}</Text>
 
-            <Divider mt={4} />
+                {/* Editable Status */}
+                <Box mt={3}>
+                  <Text fontWeight="bold" mb={1}>
+                    Status:
+                  </Text>
+                  <Select
+                    value={newStatus}
+                    onChange={(e) => {
+                      setNewStatus(e.target.value);
+                      console.log("New Status:", e.target.value);
+                    }}
+                    maxW="250px"
+                  >
+                    <option value="Demo Completed">Demo Completed</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Loose">Loose</option>
+                    <option value="In Negotiation">In Negotiation</option>
+                    <option value="Scheduled Demo">Scheduled Demo</option>
+                  </Select>
+                </Box>
 
-            {/* Demo Info */}
-            <Box mt={4}>
-              <Text fontWeight="bold">Demo Details:</Text>
-              <Text>
-                Date & Time:{" "}
-                {leadData.demo?.demoDateTime
-                  ? moment(leadData.demo.demoDateTime).format("DD/MM/YYYY HH:mm")
-                  : "Not Set"}
-              </Text>
-              <Text>Type: {leadData.demo?.demoType || "N/A"}</Text>
-              <Text>Notes: {leadData.demo?.notes || "No notes"}</Text>
-              <Text>Status: {leadData.status}</Text>
-            </Box>
-
-            <Divider mt={4} />
-
-            {/* Product Info */}
-            {leadData.products?.map((product) => (
-              <Box key={product._id} mt={4}>
-                <Text fontWeight="bold">Product:</Text>
-                <Text>Name: {product.name}</Text>
-                <Text>Model: {product.model}</Text>
-                <Text>Category: {product.category?.categoryname}</Text>
-                <Text>Price: ₹{product.price}</Text>
-                <Text>{product.description}</Text>
-                {product.imageUrl && (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    mt={2}
-                    borderRadius="md"
+                {/* Remark */}
+                <Box mt={4}>
+                  <Text fontWeight="bold" mb={1}>
+                    Remark:
+                  </Text>
+                  <Textarea
+                    placeholder="Enter your remark..."
+                    value={remark}
+                    onChange={(e) => {
+                      setRemark(e.target.value);
+                      console.log("Remark:", e.target.value);
+                    }}
                   />
+                </Box>
+              </Box>
+
+              {/* Product Info */}
+              {leadData.products?.map((product) => (
+                <Box
+                  key={product._id}
+                  p={4}
+                  borderWidth="1px"
+                  borderRadius="lg"
+                  shadow="sm"
+                >
+                  <Heading size="sm" mb={2}>
+                    Product
+                  </Heading>
+                  <Text>Name: {product.name}</Text>
+                  <Text>Model: {product.model}</Text>
+                  <Text>Category: {product.category?.categoryname}</Text>
+                  <Text>Price: ₹{product.price}</Text>
+                  <Text>{product.description}</Text>
+                  {product.imageUrl && (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      mt={3}
+                      borderRadius="md"
+                    />
+                  )}
+                </Box>
+              ))}
+
+              {/* Other Info */}
+              <Box p={4} borderWidth="1px" borderRadius="lg" shadow="sm">
+                <Heading size="sm" mb={2}>
+                  Other Information
+                </Heading>
+                <Text fontWeight="bold">Annual Turnover:</Text>
+                <Text>{leadData.annual_turn_over || "N/A"}</Text>
+
+                <Text fontWeight="bold" mt={2}>
+                  RI File:
+                </Text>
+                {leadData.riFile ? (
+                  <Button
+                    as="a"
+                    href={leadData.riFile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="sm"
+                    colorScheme="blue"
+                    mt={1}
+                  >
+                    Download RI File
+                  </Button>
+                ) : (
+                  <Text>No RI File Uploaded</Text>
                 )}
               </Box>
-            ))}
+            </Stack>
+          </DrawerBody>
 
-            <Divider mt={4} />
-
-            {/* Other Info */}
-            <Box mt={4}>
-              <Text fontWeight="bold">Annual Turnover:</Text>
-              <Text>{leadData.annual_turn_over || "N/A"}</Text>
-
-              <Text fontWeight="bold" mt={2}>
-                RI File:
-              </Text>
-              {leadData.riFile ? (
-                <a
-                  href={leadData.riFile}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "blue" }}
-                >
-                  Download RI File
-                </a>
-              ) : (
-                <Text>No RI File Uploaded</Text>
-              )}
-            </Box>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button variant="ghost" onClick={() => setIsLeadModalOpen(false)}>
+          <DrawerFooter borderTopWidth="1px">
+            <Button
+              variant="outline"
+              mr={3}
+              onClick={() => setIsLeadModalOpen(false)}
+            >
               Close
             </Button>
-          </ModalFooter>
-        </ModalContent>
+            <Button
+              colorScheme="blue"
+              onClick={editScheduleDemo}
+              isLoading={isUpdating}
+              loadingText="Updating..."
+            >
+              Save
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
       </Drawer>
-
-
-     
 
       {kycDrawerIsOpened && (
         <ClickMenu
