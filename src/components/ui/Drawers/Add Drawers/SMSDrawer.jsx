@@ -1,6 +1,6 @@
-import { Button, FormControl, FormLabel, Input, Textarea } from "@chakra-ui/react";
+import { Button, FormControl, FormLabel, Input, Textarea, Select } from "@chakra-ui/react";
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { BiX } from "react-icons/bi";
 import { toast } from "react-toastify";
@@ -8,6 +8,28 @@ import { toast } from "react-toastify";
 const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names, leads }) => {
 
   const [cookies] = useCookies();
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const { data } = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}sms/templates`,
+          {
+            headers: {
+              Authorization: `Bearer ${cookies?.access_token}`,
+            },
+          }
+        );
+        setTemplates(data.templates);
+      } catch (err) {
+        toast.error("Failed to load templates");
+      }
+    };
+    fetchTemplates();
+  }, [cookies]);
+
   const sendBulkSMSHandler = async (e) => {
     e.preventDefault();
 
@@ -17,11 +39,17 @@ const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names, leads })
       return;
     }
 
+    if (!selectedTemplate) {
+      toast.error("Please select a template");
+      return;
+    }
+
     try {
       const { data } = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}lead/bulk-sms`,
         {
           leadIds: leads,
+          templateId: selectedTemplate,
         },
         {
           headers: {
@@ -87,6 +115,20 @@ const SMSDrawer = ({ fetchAllLeads, closeDrawerHandler, mobiles, names, leads })
           </div>
         </div>
 
+        <FormControl mb={6}>
+          <FormLabel>Select SMS Template (Verified from Nimbus)</FormLabel>
+          <Select
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+            placeholder="Select template"
+          >
+            {templates.map((t) => (
+              <option key={t._id} value={t._id}>
+                {t.templateName}  
+              </option>
+            ))}
+          </Select>
+        </FormControl>
 
         <form onSubmit={sendBulkSMSHandler}>
           <Button

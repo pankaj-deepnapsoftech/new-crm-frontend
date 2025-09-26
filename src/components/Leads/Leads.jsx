@@ -14,6 +14,7 @@ import {
   Select,
   Textarea,
   useDisclosure,
+  ModalFooter,
 } from "@chakra-ui/react";
 import {
   MdOutlineRefresh,
@@ -157,24 +158,24 @@ const columns = [
     Header: "Lead Category",
     accessor: "leadCategory",
   },
-    {
-      Header: "Demo File",
-      accessor: "demoPdf",
-      Cell: ({ row }) => (
-        row.original.demoPdf ? (
-          <a
-            href={row.original.demoPdf}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline"
-          >
-            View File
-          </a>
-        ) : (
-          <span>No File</span>
-        )
-      ),
-    },
+  {
+    Header: "Demo File",
+    accessor: "demoPdf",
+    Cell: ({ row }) => (
+      row.original.demoPdf ? (
+        <a
+          href={row.original.demoPdf}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline"
+        >
+          View File
+        </a>
+      ) : (
+        <span>No File</span>
+      )
+    ),
+  },
 ];
 
 const Leads = () => {
@@ -213,7 +214,14 @@ const Leads = () => {
   const [templateName, setTemplateName] = useState("");
   const [templateLang, setTemplateLang] = useState("en");
   const [bulkName, setBulkName] = useState([]);
- 
+
+  const { isOpen: isTemplateModalOpen, onOpen: openTemplateModal, onClose: closeTemplateModal } = useDisclosure();
+  const [entityId, setEntityId] = useState('1001558230000012624');
+
+  const [templateId, setTemplateId] = useState('');
+  const [templateText, setTemplateText] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false); // For loading state on save
+
   const {
     getTableProps,
     getTableBodyProps,
@@ -471,7 +479,7 @@ const Leads = () => {
       setBulkUploading(false);
     }
   };
- 
+
   const bulkSMSHandler = (e) => {
     const rows = document.getElementsByName("select");
     const selectedRows = Array.from(rows).filter((el) => el.checked);
@@ -480,7 +488,7 @@ const Leads = () => {
       return;
     }
     const selectedRowIds = selectedRows.map((e) => e.value);
-    setSelected(selectedRowIds); 
+    setSelected(selectedRowIds);
 
     dispatch(openSendSMSDrawer());
   };
@@ -724,7 +732,7 @@ const Leads = () => {
   };
 
   // filter by status
- 
+
   const calculateLeadStatus = (filteredData) => {
     const counts = {
       FollowUp: 0,
@@ -1122,6 +1130,47 @@ const Leads = () => {
       )
     );
   };
+  const handleSaveTemplate = async () => {
+    if (!templateId || isNaN(templateId) || !templateText) {
+      toast.error("TemplateID must be numeric and both TemplateID and Text are required.");
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      const response = await fetch(baseURL + "sms/template", { // Adjust endpoint to your actual backend route for adding templates
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${cookies?.access_token}`,
+        },
+        body: JSON.stringify({
+          entityId,
+          templateName,
+          templateId,
+          templateText,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to add template");
+      }
+
+      toast.success("Template added successfully");
+      closeTemplateModal();
+      // Reset fields
+      setEntityId('');
+      setTemplateName('');
+      setTemplateId('');
+      setTemplateText('');
+      // Optionally: Fetch and refresh a list of templates if you add a table below the form
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const addComponent = () => {
     setComponents((prevComponents) => [
@@ -1175,7 +1224,7 @@ const Leads = () => {
       setLoading(false);
     }
   };
-  
+
   return (
     <>
       {!isAllowed && (
@@ -1183,14 +1232,14 @@ const Leads = () => {
           {msg}
           {((auth?.isSubscribed && auth?.isSubscriptionEnded) ||
             (auth?.isTrial && auth?.isTrialEnded)) && (
-            <div className="-mt-1">
-              <Link to="/pricing">
-                <button className="text-base border border-[#d61616] rounded-md px-5 py-1 bg-[#d61616] text-white font-medium hover:bg-white hover:text-[#d61616] ease-in-out duration-300">
-                  Pay Now
-                </button>
-              </Link>
-            </div>
-          )}
+              <div className="-mt-1">
+                <Link to="/pricing">
+                  <button className="text-base border border-[#d61616] rounded-md px-5 py-1 bg-[#d61616] text-white font-medium hover:bg-white hover:text-[#d61616] ease-in-out duration-300">
+                    Pay Now
+                  </button>
+                </Link>
+              </div>
+            )}
         </div>
       )}
 
@@ -1423,7 +1472,18 @@ const Leads = () => {
                 >
                   Add to data bank
                 </Button>
-               
+                <Button
+                  fontSize={{ base: "12px", md: "14px" }}
+                  paddingX={{ base: "8px", md: "12px" }}
+                  paddingY={{ base: "2px", md: "3px" }}
+                  width={{ base: "100%", md: 150 }}
+                  color="white"
+                  backgroundColor="#1640d6"
+                  onClick={openTemplateModal}
+                >
+                  Add SMS Template
+                </Button>
+
                 {/* {role === "Super Admin" && (
                   <Button
                     fontSize={{ base: "12px", md: "14px" }}
@@ -1502,7 +1562,7 @@ const Leads = () => {
                       closeDrawerHandler={() => dispatch(closeKYCDrawer())}
                       kycProgress={calculateKYCProgress()}
                       totalLeads={filteredData.length}
-                      dataId={dataId} 
+                      dataId={dataId}
                     />
                   </ClickMenu>
                 )}
@@ -1557,7 +1617,7 @@ const Leads = () => {
                     }}
                     leads={selected}
                   >
-                    <SMSDrawer 
+                    <SMSDrawer
                       fetchAllLeads={fetchAllLeads}
                       closeDrawerHandler={() => {
                         dispatch(closeSendSMSDrawer());
@@ -1566,7 +1626,7 @@ const Leads = () => {
                       }}
                       mobiles={bulkSMSMobiles}
                       names={bulkName}
-                      leads={selected} 
+                      leads={selected}
                     />
                   </ClickMenu>
                 )}
@@ -1663,11 +1723,10 @@ const Leads = () => {
                                 return (
                                   <Th
                                     bg="blue.400"
-                                    className={`${
-                                      column.id === "name"
-                                        ? "sticky top-0 left-[-2px]"
-                                        : ""
-                                    }`}
+                                    className={`${column.id === "name"
+                                      ? "sticky top-0 left-[-2px]"
+                                      : ""
+                                      }`}
                                     {...column.getHeaderProps(
                                       column.getSortByToggleProps()
                                     )}
@@ -1707,7 +1766,7 @@ const Leads = () => {
                       </Thead>
                       <Tbody {...getTableBodyProps()}>
                         {page.map((row) => {
-                            prepareRow(row);
+                          prepareRow(row);
                           return (
                             <Tr
                               className="relative hover:bg-gray-100 cursor-pointer text-base lg:text-base"
@@ -1761,11 +1820,10 @@ const Leads = () => {
                                     {/* Specific Column Renderings */}
                                     {cell.column.id === "leadtype" && (
                                       <span
-                                        className={`text-sm rounded-md px-3 py-1 ${
-                                          row.original.leadtype === "People"
-                                            ? "bg-[#fff0f6] text-[#c41d7f]"
-                                            : "bg-[#e6f4ff] text-[#0958d9]"
-                                        }`}
+                                        className={`text-sm rounded-md px-3 py-1 ${row.original.leadtype === "People"
+                                          ? "bg-[#fff0f6] text-[#c41d7f]"
+                                          : "bg-[#e6f4ff] text-[#0958d9]"
+                                          }`}
                                       >
                                         {row.original.leadtype === "People"
                                           ? "Individual"
@@ -1864,15 +1922,15 @@ const Leads = () => {
                               {/* Actions */}
                               <Td className="flex items-center gap-x-3">
                                 {/* KYC Button */}
-                               
-                                  
-                                
-                                  <FaUserShield size={20}
-                                    onClick={() => {
-                                      setDataId(row.original?._id);
-                                      dispatch(openKYCDrawer());
-                                    }} className="flex items-center justify-center text-blue-500"  /> 
-                             
+
+
+
+                                <FaUserShield size={20}
+                                  onClick={() => {
+                                    setDataId(row.original?._id);
+                                    dispatch(openKYCDrawer());
+                                  }} className="flex items-center justify-center text-blue-500" />
+
 
 
                                 {/* Schedule Demo */}
@@ -2052,6 +2110,60 @@ const Leads = () => {
               </Button>
             </Box>
           </ModalBody>
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={isTemplateModalOpen} onClose={closeTemplateModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Manage Template</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Box bg="red.100" color="red.700" p={3} mb={4} borderRadius="md">
+              Create in Nimbus Dashboard first (Manage Templates), get verified, then enter EXACT details here. Use ( #var# ) for placeholders.
+            </Box>
+
+            <Input
+              placeholder="Entity ID (from Nimbus, e.g., 1001558230000012624)"
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              mb={4}
+            />
+
+            <Input
+              placeholder="Template Name (e.g., Welcome Message)"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              mb={4}
+            />
+
+            <Input
+              placeholder="Template ID (Numeric from Nimbus, e.g., 17071716548492)"
+              type="text"  // String for long IDs
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              mb={4}
+            />
+
+            <Textarea
+              placeholder="Enter Template Text (Exact from Nimbus, e.g., Dear ( #var# ), Welcome...)"
+              value={templateText}
+              onChange={(e) => setTemplateText(e.target.value)}
+              mb={4}
+              rows={4}
+            />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={handleSaveTemplate}
+              isLoading={savingTemplate}
+            >
+              Save
+            </Button>
+            <Button onClick={closeTemplateModal}>Cancel</Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </>
