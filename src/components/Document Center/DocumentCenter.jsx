@@ -3,7 +3,7 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
 import { useCookies } from "react-cookie";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify"; 
 import { MdDelete } from "react-icons/md";
 import { RiEdit2Fill } from "react-icons/ri";
 import { FaDownload } from "react-icons/fa6";
@@ -19,9 +19,11 @@ const DocumentCenter = () => {
     const [isLoading, setIsLoading] = useState(false)
     const modalRef = useRef();
     const [categoryOptions, setCategoryOptions] = useState(() => {
-        const saved = localStorage.getItem("documentCategories");
-        return saved ? JSON.parse(saved) : [];
+        const stored = localStorage.getItem("documentCategories");
+        return stored ? JSON.parse(stored) : [];
     });
+    const [isCustomCategory, setIsCustomCategory] = useState(false);
+
     const [currentPage, setCurrentPage] = useState(1);
 
     const [limit] = useState(10);
@@ -64,14 +66,14 @@ const DocumentCenter = () => {
 
 
     const ImageUploader = async (formData) => {
-         setIsLoading(true)
+        setIsLoading(true)
         try {
             const res = await axios.post("https://images.deepmart.shop/upload", formData);
             return res.data?.[0];
         } catch (error) {
             console.error("Image upload failed:", error);
             return null;
-        }finally{
+        } finally {
             setIsLoading(false)
         }
     };
@@ -81,7 +83,7 @@ const DocumentCenter = () => {
         initialValues: edittable || {
             documentName: "",
             documentCategory: "",
-            documentFile: null,
+            documentFile: "",
         },
         validationSchema: Yup.object({
             documentName: Yup.string().required("Required"),
@@ -133,12 +135,19 @@ const DocumentCenter = () => {
                 setIsLoading(false);
             }
 
-            if (!categoryOptions.includes(values.documentCategory)) {
-                const updatedCategories = [...categoryOptions, values.documentCategory];
+            const newCategory = values.documentCategory.trim();
+
+            if (
+                newCategory &&
+                !categoryOptions.some(
+                    (cat) => cat.trim().toLowerCase() === newCategory.toLowerCase()
+                )
+            ) {
+                const updatedCategories = [...categoryOptions, newCategory];
                 setCategoryOptions(updatedCategories);
                 localStorage.setItem("documentCategories", JSON.stringify(updatedCategories));
+                setIsCustomCategory(false); // Nayi category add hone ke baad dropdown me wapas aajaye
             }
-
             setFile(null);
             setFilePreview(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -161,7 +170,7 @@ const DocumentCenter = () => {
 
             const { data, pagination } = res?.data;
 
-          
+
             if (data.length === 0 && page > 1) {
                 setCurrentPage(page - 1);
             } else {
@@ -234,18 +243,19 @@ const DocumentCenter = () => {
     }, [showModal]);
     useEffect(() => {
         if (edittable) {
-            setFilePreview(edittable?.documentFile)
-            setFile(fileInputRef?.value)
+            setFilePreview(edittable.documentFile || null);
+            setFile(null); 
         } else {
-            setFilePreview(null);
             setFile(null);
             setFilePreview(null);
             formik.resetForm();
         }
-    }, [edittable])
+    }, [edittable, showModal]);
+;
 
-    console.log(fileInputRef)
 
+    // console.log(filePreview)
+    // console.log(edittable)
     return (
         <div className="">
 
@@ -257,6 +267,7 @@ const DocumentCenter = () => {
                         setEditTable(null);
                         setFile(null);
                         setFilePreview(null);
+                        setIsCustomCategory(false);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                         formik.resetForm();
                     }}
@@ -274,12 +285,12 @@ const DocumentCenter = () => {
                 <div ref={modalRef} className="relative bg-white w-96 h-full shadow-lg p-6">
                     <h3 className="text-lg font-semibold mb-4">Add Document</h3>
 
-
                     <form onSubmit={formik.handleSubmit} className="space-y-4">
 
                         <div>
                             <label className="block font-medium mb-1">Upload Document</label>
                             <input
+                                required
                                 type="file"
                                 name="documentFile"
                                 multiple
@@ -300,13 +311,38 @@ const DocumentCenter = () => {
                                     {formik.errors.documentFile}
                                 </p>
                             )}
-                            {filePreview && (
-                                <img
-                                    src={filePreview}
-                                    alt="Preview"
-                                    className="mt-2 h-24 w-24 object-cover rounded-md"
-                                />
-                            )}
+                            {(file || filePreview) && (
+                                <div className="mt-2">
+                                    {file ? (
+                                        file.type.startsWith("image/") ? (
+                                            <img
+                                                src={filePreview}
+                                                alt="preview"
+                                                className="h-24 w-24 object-cover rounded-md"
+                                            />
+                                        ) : file.type === "application/pdf" ? (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-md w-fit">
+                                                📄 {file.name}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">Unknown file type</p>
+                                        )    
+                                    ) : (     
+                                        filePreview?.endsWith(".pdf") ? (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-md w-fit">
+                                                📄 Existing PDF
+                                            </div>
+                                        ) : (
+                                            <img
+                                                src={filePreview}
+                                                alt="preview"
+                                                className="h-24 w-24 object-cover rounded-md"
+                                            />
+                                        )
+                                    )}
+                                </div>
+                            )}   
+
                         </div>
 
 
@@ -328,34 +364,65 @@ const DocumentCenter = () => {
                             )}
                         </div>
 
+                        {!isCustomCategory ? (
+                            <div>
+                                <label className="block font-medium mb-1">Document Category</label>
+                                <select
+                                    name="documentCategory"
+                                    className="w-full border p-2 rounded-md"
+                                    value={formik.values.documentCategory}
+                                    onChange={(e) => {
+                                        const selected = e.target.value;
+                                        if (selected === "__other__") {
+                                            setIsCustomCategory(true);
+                                            formik.setFieldValue("documentCategory", "");
+                                        } else {
+                                            formik.handleChange(e);
+                                        }
+                                    }}
+                                    onBlur={formik.handleBlur}
+                                >
+                                    <option value="">Select category</option>
+                                    <option value="__other__">Other</option> {/* Always on top */}
+                                    {categoryOptions.map((cat, idx) => (
+                                        <option key={idx} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
 
-                        <div>
-                            <label className="block font-medium mb-1">Document Category</label>
-                            <input
-                                list="document-categories"
-                                name="documentCategory"
-                                className="w-full border p-2 rounded-md"
-                                value={formik.values.documentCategory}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                placeholder="Enter or select category"
-                            />
-
-                            <datalist id="document-categories">
-                                {categoryOptions.map((category, index) => (
-                                    <option key={index} value={category} />
-                                ))}
-                            </datalist>
-
-
-                            {formik.touched.documentCategory &&
-                                formik.errors.documentCategory && (
-                                    <p className="text-red-500 text-sm">
-                                        {formik.errors.documentCategory}
-                                    </p>
+                                {formik.touched.documentCategory && formik.errors.documentCategory && (
+                                    <p className="text-red-500 text-sm">{formik.errors.documentCategory}</p>
                                 )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block font-medium mb-1">New Category</label>
+                                <input
+                                    type="text"
+                                    name="documentCategory"
+                                    className="w-full border p-2 rounded-md"
+                                    placeholder="Enter new category"
+                                    value={formik.values.documentCategory}
+                                    onChange={formik.handleChange}
+                                    onBlur={formik.handleBlur}
+                                />
+                                {formik.touched.documentCategory && formik.errors.documentCategory && (
+                                    <p className="text-red-500  text-sm">{formik.errors.documentCategory}</p>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsCustomCategory(false);
+                                        formik.setFieldValue("documentCategory", "");
+                                    }}
+                                    className="mt-2 inline-block rounded-md bg-blue-500 px-3 py-1 text-sm font-medium text-white hover:bg-blue-600 transition"
+                                >
+                                    Choose from list
+                                </button>
 
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-2 mt-4">
                             <button
@@ -381,18 +448,18 @@ const DocumentCenter = () => {
                     </form>
                 </div>
             </div>
-            <div className="p-4">
+            <div className="p-4 ">
                 {documents?.length > 0 ? (
-                    <div className="overflow-hidden rounded-md border border-gray-300 shadow-sm">
-                        <table className="min-w-full bg-white">
+                    <div className="overflow-x-auto whitespace-nowrap rounded-md border border-gray-300 shadow-sm">
+                        <table className="min-w-full bg-white ">
                             <thead className="bg-gray-100">
                                 <tr>
                                     <th className="text-left px-4 py-2 border-b">Document Name</th>
                                     <th className="text-left px-4 py-2 border-b">Category</th>
                                     <th className="text-left px-4 py-2 border-b">Image</th>
-                                    <th className="text-center px-4 py-2 border-b">Action</th>
+                                    <th className="text-start pl-12 px-4 py-2 border-b">Action</th>
                                 </tr>
-                            </thead>    
+                            </thead>
                             <tbody>
                                 {documents.map((doc) => (
                                     <tr
