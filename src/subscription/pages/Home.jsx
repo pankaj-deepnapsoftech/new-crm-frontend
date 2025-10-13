@@ -9,7 +9,7 @@ const Home = ({showAuthenticationMenu, setShowAuthenticationMenu}) => {
   return (
     <div>
       <HeroSection />
-      <Clients />
+      {/* <Clients /> */}
       <Features />
       <Technologies />
       <Pricing showAuthenticationMenu={showAuthenticationMenu} setShowAuthenticationMenu={setShowAuthenticationMenu} />
