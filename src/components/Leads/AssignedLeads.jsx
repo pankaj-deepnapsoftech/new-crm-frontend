@@ -660,12 +660,12 @@ const AssignedLeads = () => {
                                           backgroundColor: `${
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].bg
+                                            ]?.bg
                                           }`,
                                           color: `${
                                             statusStyles[
                                               row.original.status.toLowerCase()
-                                            ].text
+                                            ]?.text
                                           }`,
                                         }}
                                       >
@@ -679,12 +679,12 @@ const AssignedLeads = () => {
                                           backgroundColor: `${
                                             sourceStyles[
                                               row.original.source.toLowerCase()
-                                            ].bg
+                                            ]?.bg
                                           }`,
                                           color: `${
                                             sourceStyles[
                                               row.original.source.toLowerCase()
-                                            ].text
+                                            ]?.text
                                           }`,
                                         }}
                                       >

@@ -760,7 +760,7 @@ const SideNavigation = ({ isMenuOpen, setIsMenuOpen }) => {
             <span>
               <FaDatabase />
             </span>
-            <span>Data Bank</span>
+            <span>Archived</span>
 
             {!checkAccess(auth, "databank")?.isAllowed && (
               <span className="mt-1">

@@ -65,7 +65,7 @@ import { checkAccess } from "../../utils/checkAccess";
 import { Link } from "react-router-dom";
 
 const columns = [
-  { Header: "Number", accessor: "number" },
+  { Header: "Serial No.", accessor: "number" },
   { Header: "Created By", accessor: "creator" },
   { Header: "Created On", accessor: "created_on" },
   { Header: "Customer", accessor: "customer" },

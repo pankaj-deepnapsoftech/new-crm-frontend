@@ -56,7 +56,7 @@ import { Link } from "react-router-dom";
 
 const columns = [
   {
-    Header: "Number",
+    Header: "Serial No.",
     accessor: "number",
   },
   {

@@ -1232,14 +1232,14 @@ const Leads = () => {
           {msg}
           {((auth?.isSubscribed && auth?.isSubscriptionEnded) ||
             (auth?.isTrial && auth?.isTrialEnded)) && (
-              <div className="-mt-1">
-                <Link to="/pricing">
-                  <button className="text-base border border-[#d61616] rounded-md px-5 py-1 bg-[#d61616] text-white font-medium hover:bg-white hover:text-[#d61616] ease-in-out duration-300">
-                    Pay Now
-                  </button>
-                </Link>
-              </div>
-            )}
+            <div className="-mt-1">
+              <Link to="/pricing">
+                <button className="text-base border border-[#d61616] rounded-md px-5 py-1 bg-[#d61616] text-white font-medium hover:bg-white hover:text-[#d61616] ease-in-out duration-300">
+                  Pay Now
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
@@ -1470,7 +1470,7 @@ const Leads = () => {
                   backgroundColor="#1640d6"
                   onClick={addtoDataBank}
                 >
-                  Add to data bank
+                  Add to archived
                 </Button>
                 <Button
                   fontSize={{ base: "12px", md: "14px" }}
@@ -1723,10 +1723,11 @@ const Leads = () => {
                                 return (
                                   <Th
                                     bg="blue.400"
-                                    className={`${column.id === "name"
-                                      ? "sticky top-0 left-[-2px]"
-                                      : ""
-                                      }`}
+                                    className={`${
+                                      column.id === "name"
+                                        ? "sticky top-0 left-[-2px]"
+                                        : ""
+                                    }`}
                                     {...column.getHeaderProps(
                                       column.getSortByToggleProps()
                                     )}
@@ -1820,10 +1821,11 @@ const Leads = () => {
                                     {/* Specific Column Renderings */}
                                     {cell.column.id === "leadtype" && (
                                       <span
-                                        className={`text-sm rounded-md px-3 py-1 ${row.original.leadtype === "People"
-                                          ? "bg-[#fff0f6] text-[#c41d7f]"
-                                          : "bg-[#e6f4ff] text-[#0958d9]"
-                                          }`}
+                                        className={`text-sm rounded-md px-3 py-1 ${
+                                          row.original.leadtype === "People"
+                                            ? "bg-[#fff0f6] text-[#c41d7f]"
+                                            : "bg-[#e6f4ff] text-[#0958d9]"
+                                        }`}
                                       >
                                         {row.original.leadtype === "People"
                                           ? "Individual"
@@ -1923,15 +1925,14 @@ const Leads = () => {
                               <Td className="flex items-center gap-x-3">
                                 {/* KYC Button */}
 
-
-
-                                <FaUserShield size={20}
+                                <FaUserShield
+                                  size={20}
                                   onClick={() => {
                                     setDataId(row.original?._id);
                                     dispatch(openKYCDrawer());
-                                  }} className="flex items-center justify-center text-blue-500" />
-
-
+                                  }}
+                                  className="flex items-center justify-center text-blue-500"
+                                />
 
                                 {/* Schedule Demo */}
                                 <FaArrowsAlt
@@ -1962,7 +1963,9 @@ const Leads = () => {
                                   className="text-blue-500 hover:scale-110 transition-transform cursor-pointer"
                                   size={20}
                                   title="View Details"
-                                  onClick={() => showDetailsHandler(row.original?._id)}
+                                  onClick={() =>
+                                    showDetailsHandler(row.original?._id)
+                                  }
                                 />
 
                                 {/* Edit */}
@@ -1984,7 +1987,6 @@ const Leads = () => {
                                   }}
                                 />
                               </Td>
-
                             </Tr>
                           );
                         })}
@@ -2119,7 +2121,8 @@ const Leads = () => {
           <ModalCloseButton />
           <ModalBody>
             <Box bg="red.100" color="red.700" p={3} mb={4} borderRadius="md">
-              Create in Nimbus Dashboard first (Manage Templates), get verified, then enter EXACT details here. Use ( #var# ) for placeholders.
+              Create in Nimbus Dashboard first (Manage Templates), get verified,
+              then enter EXACT details here. Use ( #var# ) for placeholders.
             </Box>
 
             <Input
@@ -2138,7 +2141,7 @@ const Leads = () => {
 
             <Input
               placeholder="Template ID (Numeric from Nimbus, e.g., 17071716548492)"
-              type="text"  // String for long IDs
+              type="text" // String for long IDs
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               mb={4}
